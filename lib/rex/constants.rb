@@ -81,6 +81,7 @@ ARCH_TTY    = 'tty'
 ARCH_ARMLE  = 'armle'
 ARCH_ARMBE  = 'armbe'
 ARCH_JAVA   = 'java'
+ARCH_SSH    = 'ssh'
 ARCH_TYPES  =
 	[
 		ARCH_X86,
@@ -98,7 +99,8 @@ ARCH_TYPES  =
 		ARCH_CMD,
 		ARCH_PHP,
 		ARCH_TTY,
-		ARCH_JAVA
+		ARCH_JAVA,
+		ARCH_SSH
 	]
 
 ARCH_ALL = ARCH_TYPES
