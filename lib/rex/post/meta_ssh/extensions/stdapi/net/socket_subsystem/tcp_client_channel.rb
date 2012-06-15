@@ -64,7 +64,7 @@ class TcpClientChannel
 					client.ssh.forward.extend(ForwardMixin)
 				end
 
-				server=client.ssh.forward.local(0, params.peerhost, params.peerport)
+				server = client.ssh.forward.local(0, params.peerhost, params.peerport)
 				if (server.getsockname =~ /127\.0\.0\.1:/)
 					# JRuby ridiculousness
 					caddr, lport = server.getsockname.split(":")
