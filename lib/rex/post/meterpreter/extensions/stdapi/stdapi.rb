@@ -60,7 +60,7 @@ class Stdapi < Extension
 							'process'  => Sys::ProcessExtension.new(client),
 							'registry' => Sys::RegistryExtension.new(client),
 							'eventlog' => Sys::EventLogExtension.new(client),
-							'power'    => self.power
+							'power'    => Sys::PowerExtension.new(client)
 						})
 				},
 				{
@@ -87,56 +87,6 @@ class Stdapi < Extension
 			])
 	end
 
-	#
-	# Sets the client instance on a duplicated copy of the supplied class.
-	#
-	def brand(klass)
-		klass = klass.dup
-		klass.client = self.client
-		return klass
-	end
-
-	#
-	# Returns a copy of the Dir class.
-	#
-	def dir
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Fs::Dir)
-	end
-
-	#
-	# Returns a copy of the FileStat class.
-	#
-	def filestat
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Fs::FileStat)
-	end
-
-	#
-	# Returns a copy of the Process class.
-	#
-	def process
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Sys::Process)
-	end
-
-	#
-	# Returns a copy of the Registry class.
-	#
-	def registry
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Sys::Registry)
-	end
-
-	#
-	# Returns a copy of the EventLog class.
-	#
-	def eventlog
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Sys::EventLog)
-	end
-
-	#
-	# Returns a copy of the Power class.
-	#
-	def power
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Sys::Power)
-	end
 end
 
 end; end; end; end; end
