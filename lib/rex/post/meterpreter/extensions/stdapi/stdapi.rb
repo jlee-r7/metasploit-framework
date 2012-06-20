@@ -56,7 +56,7 @@ class Stdapi < Extension
 					'name' => 'sys',
 					'ext'  => ObjectAliases.new(
 						{
-							'config'   => Sys::Config.new(client),
+							'config'   => Sys::ConfigExtension.new(client),
 							'process'  => Sys::ProcessExtension.new(client),
 							'registry' => Sys::RegistryExtension.new(client),
 							'eventlog' => Sys::EventLogExtension.new(client),
@@ -67,17 +67,17 @@ class Stdapi < Extension
 					'name' => 'net',
 					'ext'  => ObjectAliases.new(
 						{
-							'config'   => Rex::Post::Meterpreter::Extensions::Stdapi::Net::Config.new(client),
-							'socket'   => Rex::Post::Meterpreter::Extensions::Stdapi::Net::Socket.new(client)
+							'config'   => Net::ConfigExtension.new(client),
+							'socket'   => Net::SocketExtension.new(client)
 						})
 				},
 				{
 					'name' => 'railgun',
-					'ext'  => Rex::Post::Meterpreter::Extensions::Stdapi::Railgun::Railgun.new(client)
+					'ext'  => Railgun::Railgun.new(client)
 				},
 				{
 					'name' => 'webcam',
-					'ext'  => Rex::Post::Meterpreter::Extensions::Stdapi::Webcam::Webcam.new(client)
+					'ext'  => Webcam::Webcam.new(client)
 				},
 				{
 					'name' => 'ui',

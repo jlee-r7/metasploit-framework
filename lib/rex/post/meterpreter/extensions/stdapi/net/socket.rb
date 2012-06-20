@@ -24,7 +24,7 @@ module Net
 # meterpreter connection.
 #
 ###
-class Socket
+class SocketExtension
 
 	##
 	#
@@ -38,7 +38,8 @@ class Socket
 	def initialize(client)
 		self.client = client
 
-		# register the inbound handler for the tcp server channel (allowing us to receive new client connections to a tcp server channel)
+		# register the inbound handler for the tcp server channel (allowing us to
+		# receive new client connections to a tcp server channel)
 		client.register_inbound_handler( Rex::Post::Meterpreter::Extensions::Stdapi::Net::SocketSubsystem::TcpServerChannel )
 
 	end

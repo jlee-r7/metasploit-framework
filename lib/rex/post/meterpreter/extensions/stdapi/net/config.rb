@@ -18,7 +18,7 @@ module Net
 # routes.
 #
 ###
-class Config
+class ConfigExtension
 
 	##
 	#

@@ -18,7 +18,7 @@ module Sys
 # This class provides access to remote system configuration and information.
 #
 ###
-class Config
+class ConfigExtension
 
 	def initialize(client)
 		self.client = client
