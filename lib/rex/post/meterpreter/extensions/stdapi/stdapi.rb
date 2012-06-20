@@ -48,7 +48,7 @@ class Stdapi < Extension
 					'ext'  => ObjectAliases.new(
 						{
 							'dir'      => self.dir,
-							'file'     => self.file,
+							'file'     => Fs::FileExtension.new(client),
 							'filestat' => self.filestat
 						})
 				},
@@ -101,13 +101,6 @@ class Stdapi < Extension
 	#
 	def dir
 		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Fs::Dir)
-	end
-
-	#
-	# Returns a copy of the File class.
-	#
-	def file
-		brand(Rex::Post::Meterpreter::Extensions::Stdapi::Fs::File)
 	end
 
 	#

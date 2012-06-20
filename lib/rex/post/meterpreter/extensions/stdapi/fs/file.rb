@@ -21,18 +21,17 @@ module Fs
 # with files on the remote machine.
 #
 ###
-class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
+class FileExtension
+	attr_accessor :client
 
-	include Rex::Post::File
-
-	class << self
-		attr_accessor :client
+	def initialize(client)
+		self.client = client
 	end
 
 	#
 	# Return the directory separator, i.e.: "/" on unix, "\\" on windows
 	#
-	def File.separator()
+	def separator()
 		# The separator won't change, so cache it to prevent sending
 		# unnecessary requests.
 		return @separator if @separator
@@ -52,15 +51,13 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 		return @separator
 	end
 
-	class << self
-		alias :Separator :separator
-		alias :SEPARATOR :separator
-	end
+	alias :Separator :separator
+	alias :SEPARATOR :separator
 
 	#
 	# Search for files.
 	#
-	def File.search( root=nil, glob="*.*", recurse=true, timeout=-1 )
+	def search( root=nil, glob="*.*", recurse=true, timeout=-1 )
 
 		files = ::Array.new
 
@@ -92,7 +89,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Returns the base name of the supplied file path to the caller.
 	#
-	def File.basename(*a)
+	def basename(*a)
 		path = a[0]
 
 		# Allow both kinds of dir serparators since lots and lots of code
@@ -107,7 +104,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	# Expands a file path, substituting all environment variables, such as
 	# %TEMP%.
 	#
-	def File.expand_path(path)
+	def expand_path(path)
 		request = Packet.create_request('stdapi_fs_file_expand_path')
 
 		request.add_tlv(TLV_TYPE_FILE_PATH, client.unicode_filter_decode( path ))
@@ -121,7 +118,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Calculates the MD5 (16-bytes raw) of a remote file
 	#
-	def File.md5(path)
+	def md5(path)
 		request = Packet.create_request('stdapi_fs_md5')
 
 		request.add_tlv(TLV_TYPE_FILE_PATH, client.unicode_filter_decode( path ))
@@ -135,7 +132,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Calculates the SHA1 (20-bytes raw) of a remote file
 	#
-	def File.sha1(path)
+	def sha1(path)
 		request = Packet.create_request('stdapi_fs_sha1')
 
 		request.add_tlv(TLV_TYPE_FILE_PATH, client.unicode_filter_decode( path ))
@@ -149,14 +146,14 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Performs a stat on a file and returns a FileStat instance.
 	#
-	def File.stat(name)
+	def stat(name)
 		return client.fs.filestat.new( name )
 	end
 
 	#
 	# Determines if a file exists and returns true/false
 	#
-	def File.exists?(name)
+	def exists?(name)
 		r = client.fs.filestat.new(name) rescue nil
 		r ? true : false
 	end
@@ -164,7 +161,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Performs a delete on the specified file.
 	#
-	def File.rm(name)
+	def rm(name)
 		request = Packet.create_request('stdapi_fs_delete_file')
 
 		request.add_tlv(TLV_TYPE_FILE_PATH, client.unicode_filter_decode( name ))
@@ -177,15 +174,15 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Performs a delete on the specified file.
 	#
-	def File.unlink(name)
-		return File.rm(name)
+	def unlink(name)
+		return rm(name)
 	end
 
 	#
 	# Upload one or more files to the remote computer the remote
 	# directory supplied in destination.
 	#
-	def File.upload(destination, *src_files, &stat)
+	def upload(destination, *src_files, &stat)
 		src_files.each { |src|
 			dest = destination
 
@@ -202,7 +199,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Upload a single file.
 	#
-	def File.upload_file(dest_file, src_file)
+	def upload_file(dest_file, src_file)
 		# Open the file on the remote side for writing and read
 		# all of the contents of the local file
 		dest_fd = client.fs.file.new(dest_file, "wb")
@@ -223,7 +220,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	# Download one or more files from the remote computer to the local
 	# directory supplied in destination.
 	#
-	def File.download(dest, *src_files, &stat)
+	def download(dest, *src_files, &stat)
 		src_files.each { |src|
 			if (::File.basename(dest) != File.basename(src))
 				# The destination when downloading is a local file so use this
@@ -242,7 +239,7 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 	#
 	# Download a single file.
 	#
-	def File.download_file(dest_file, src_file)
+	def download_file(dest_file, src_file)
 		src_fd = client.fs.file.new(src_file, "rb")
 		dir = ::File.dirname(dest_file)
 		::FileUtils.mkdir_p(dir) if dir and not ::File.directory?(dir)
@@ -261,17 +258,26 @@ class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 		end
 	end
 
-	##
 	#
-	# Constructor
+	# Factory method for creating a File object
 	#
-	##
+	def new(*args)
+		File.new(client, *args)
+	end
+
+end
+
+
+
+class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
+
+	include Rex::Post::File
 
 	#
 	# Initializes and opens the specified file with the specified permissions.
 	#
-	def initialize(name, mode = "r", perms = 0)
-		self.client = self.class.client
+	def initialize(client, name, mode = "r", perms = 0)
+		self.client = client
 		self.filed  = _open(name, mode, perms)
 	end
 
