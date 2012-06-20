@@ -14,16 +14,12 @@ module Extensions
 module Stdapi
 module Sys
 
-###
-#
-# This class provides access to the Windows event log on the remote
-# machine.
-#
-###
-class EventLog
+class EventLogExtension
 
-	class << self
-		attr_accessor :client
+	attr_accessor :client
+
+	def initialize(client)
+		self.client = client
 	end
 
 	#
@@ -33,15 +29,33 @@ class EventLog
 	# NOTE: should support UNCServerName sometime
 	#++
 	#
-	def EventLog.open(name)
+	def open(name)
 		request = Packet.create_request('stdapi_sys_eventlog_open')
 
 		request.add_tlv(TLV_TYPE_EVENT_SOURCENAME, name);
 
 		response = client.send_request(request)
 
-		return self.new(response.get_tlv_value(TLV_TYPE_EVENT_HANDLE))
+		return EventLog.new(client, response.get_tlv_value(TLV_TYPE_EVENT_HANDLE))
 	end
+
+	#
+	# Factory method for creating an EventLog object
+	#
+	def new(*args)
+		EventLog.new(client, *args)
+	end
+end
+
+###
+#
+# This class provides access to the Windows event log on the remote
+# machine.
+#
+###
+class EventLog
+
+	attr_accessor :client
 
 	##
 	#
@@ -57,14 +71,15 @@ class EventLog
 	#
 	# Initializes an instance of the eventlog manipulator.
 	#
-	def initialize(hand)
-		self.client = self.class.client
+	def initialize(client, hand)
+		self.client = client
 		self.handle = hand
-		ObjectSpace.define_finalizer( self, self.class.finalize(self.client, self.handle) )
+		ObjectSpace.define_finalizer( self, self.finalize(self.client, self.handle) )
 	end
 
-	def self.finalize(client,handle)
-		proc { self.close(client,handle) }
+	def finalize(client,handle)
+
+		proc { close(client,handle) }
 	end
 
 	#
@@ -93,14 +108,14 @@ class EventLog
 		response = client.send_request(request)
 
 		EventLogSubsystem::EventRecord.new(
-		  response.get_tlv_value(TLV_TYPE_EVENT_RECORDNUMBER),
-		  response.get_tlv_value(TLV_TYPE_EVENT_TIMEGENERATED),
-		  response.get_tlv_value(TLV_TYPE_EVENT_TIMEWRITTEN),
-		  response.get_tlv_value(TLV_TYPE_EVENT_ID),
-		  response.get_tlv_value(TLV_TYPE_EVENT_TYPE),
-		  response.get_tlv_value(TLV_TYPE_EVENT_CATEGORY),
-		  response.get_tlv_values(TLV_TYPE_EVENT_STRING),
-		  response.get_tlv_value(TLV_TYPE_EVENT_DATA)
+			response.get_tlv_value(TLV_TYPE_EVENT_RECORDNUMBER),
+			response.get_tlv_value(TLV_TYPE_EVENT_TIMEGENERATED),
+			response.get_tlv_value(TLV_TYPE_EVENT_TIMEWRITTEN),
+			response.get_tlv_value(TLV_TYPE_EVENT_ID),
+			response.get_tlv_value(TLV_TYPE_EVENT_TYPE),
+			response.get_tlv_value(TLV_TYPE_EVENT_CATEGORY),
+			response.get_tlv_values(TLV_TYPE_EVENT_STRING),
+			response.get_tlv_value(TLV_TYPE_EVENT_DATA)
 		)
 	end
 
