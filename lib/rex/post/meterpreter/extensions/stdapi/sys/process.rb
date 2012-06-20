@@ -169,7 +169,7 @@ class ProcessExtension
 		end
 
 		# Return a process instance
-		return Process.new(pid, handle, channel)
+		return Process.new(client, pid, handle, channel)
 	end
 
 	#
