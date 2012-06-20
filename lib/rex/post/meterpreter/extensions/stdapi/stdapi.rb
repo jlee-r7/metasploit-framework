@@ -49,7 +49,7 @@ class Stdapi < Extension
 						{
 							'dir'      => self.dir,
 							'file'     => Fs::FileExtension.new(client),
-							'filestat' => self.filestat
+							'filestat' => Fs::FileStatExtension.new(client)
 						})
 				},
 				{

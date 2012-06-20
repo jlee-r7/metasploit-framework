@@ -10,6 +10,21 @@ module Extensions
 module Stdapi
 module Fs
 
+class FileStatExtension
+	attr_accessor :client
+
+	def initialize(client)
+		self.client = client
+	end
+
+	#
+	# Factory method for returning a FileStat object
+	#
+	def new(*args)
+		FileStat.new(client, *args)
+	end
+end
+
 ###
 #
 # This class wrappers gathering information about a given file and implements
@@ -18,10 +33,11 @@ module Fs
 ###
 class FileStat < Rex::Post::FileStat
 
-	class << self
-		attr_accessor :client
-	end
+	attr_accessor :client
 
+	#
+	# Used to determine how to unpack the buffer from remote
+	#
 	@@struct_stat = [
 	  'st_dev',     4,  # 0
 	  'st_ino',     2,  # 4
@@ -37,16 +53,11 @@ class FileStat < Rex::Post::FileStat
 	  'st_ctime',   8,  # 40
 	]
 
-	##
-	#
-	# Constructor
-	#
-	##
-
 	#
 	# Returns an instance of a FileStat object.
 	#
-	def initialize(file)
+	def initialize(client, file)
+		self.client = client
 		self.stathash = stat(file) if (file)
 	end
 
@@ -88,9 +99,9 @@ protected
 	def stat(file)
 		request = Packet.create_request('stdapi_fs_stat')
 
-		request.add_tlv(TLV_TYPE_FILE_PATH, self.class.client.unicode_filter_decode( file ))
+		request.add_tlv(TLV_TYPE_FILE_PATH, self.client.unicode_filter_decode( file ))
 
-		response = self.class.client.send_request(request)
+		response = self.client.send_request(request)
 		stat_buf = response.get_tlv(TLV_TYPE_STAT_BUF).value
 
 		# Next, we go through the returned stat_buf and fix up the values
