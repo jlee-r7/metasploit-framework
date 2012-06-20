@@ -10,49 +10,17 @@ module Extensions
 module Stdapi
 module Fs
 
-###
-#
-# This class implements directory operations against the remote endpoint.  It
-# implements the Rex::Post::Dir interface.
-#
-###
-class Dir < Rex::Post::Dir
+class DirExtension
+	attr_accessor :client
 
-	class << self
-		attr_accessor :client
-	end
-
-	##
-	#
-	# Constructor
-	#
-	##
-
-	#
-	# Initializes the directory instance.
-	#
-	def initialize(path)
-		self.path   = path
-		self.client = self.class.client
-	end
-
-	##
-	#
-	# Enumeration
-	#
-	##
-
-	#
-	# Enumerates all of the contents of the directory.
-	#
-	def each(&block)
-		client.fs.dir.foreach(self.path, &block)
+	def initialize(client)
+		self.client = client
 	end
 
 	#
 	# Enumerates all of the files/folders in a given directory.
 	#
-	def Dir.entries(name = getwd)
+	def entries(name = getwd)
 		request = Packet.create_request('stdapi_fs_ls')
 		files   = []
 
@@ -70,7 +38,7 @@ class Dir < Rex::Post::Dir
 	#
 	# Enumerates files with a bit more information than the default entries.
 	#
-	def Dir.entries_with_info(name = getwd)
+	def entries_with_info(name = getwd)
 		request = Packet.create_request('stdapi_fs_ls')
 		files   = []
 
@@ -114,7 +82,7 @@ class Dir < Rex::Post::Dir
 	#
 	# Changes the working directory of the remote process.
 	#
-	def Dir.chdir(path)
+	def chdir(path)
 		request = Packet.create_request('stdapi_fs_chdir')
 
 		request.add_tlv(TLV_TYPE_DIRECTORY_PATH, client.unicode_filter_decode( path ))
@@ -127,7 +95,7 @@ class Dir < Rex::Post::Dir
 	#
 	# Creates a directory.
 	#
-	def Dir.mkdir(path)
+	def mkdir(path)
 		request = Packet.create_request('stdapi_fs_mkdir')
 
 		request.add_tlv(TLV_TYPE_DIRECTORY_PATH, client.unicode_filter_decode( path ))
@@ -140,7 +108,7 @@ class Dir < Rex::Post::Dir
 	#
 	# Returns the current working directory of the remote process.
 	#
-	def Dir.pwd
+	def pwd
 		request = Packet.create_request('stdapi_fs_getwd')
 
 		response = client.send_request(request)
@@ -151,14 +119,14 @@ class Dir < Rex::Post::Dir
 	#
 	# Synonym for pwd.
 	#
-	def Dir.getwd
+	def getwd
 		pwd
 	end
 
 	#
 	# Removes the supplied directory if it's empty.
 	#
-	def Dir.delete(path)
+	def delete(path)
 		request = Packet.create_request('stdapi_fs_delete_dir')
 
 		request.add_tlv(TLV_TYPE_DIRECTORY_PATH, client.unicode_filter_decode( path ))
@@ -171,14 +139,14 @@ class Dir < Rex::Post::Dir
 	#
 	# Synonyms for delete.
 	#
-	def Dir.rmdir(path)
+	def rmdir(path)
 		delete(path)
 	end
 
 	#
 	# Synonyms for delete.
 	#
-	def Dir.unlink(path)
+	def unlink(path)
 		delete(path)
 	end
 
@@ -192,7 +160,7 @@ class Dir < Rex::Post::Dir
 	# Downloads the contents of a remote directory a
 	# local directory, optionally in a recursive fashion.
 	#
-	def Dir.download(dst, src, recursive = false, force = true, &stat)
+	def download(dst, src, recursive = false, force = true, &stat)
 
 		self.entries(src).each { |src_sub|
 			dst_item = dst + ::File::SEPARATOR + client.unicode_filter_encode( src_sub )
@@ -238,7 +206,7 @@ class Dir < Rex::Post::Dir
 	# Uploads the contents of a local directory to a remote
 	# directory, optionally in a recursive fashion.
 	#
-	def Dir.upload(dst, src, recursive = false, &stat)
+	def upload(dst, src, recursive = false, &stat)
 		::Dir.entries(src).each { |src_sub|
 			dst_item = dst + client.fs.file.separator + client.unicode_filter_encode( src_sub )
 			src_item = src + ::File::SEPARATOR + client.unicode_filter_encode( src_sub )
@@ -269,6 +237,55 @@ class Dir < Rex::Post::Dir
 			end
 		}
 	end
+
+	#
+	# Factory method for creating a File object
+	#
+	def new(*args)
+		Dir.new(client, *args)
+	end
+
+
+end
+
+
+###
+#
+# This class implements directory operations against the remote endpoint.  It
+# implements the Rex::Post::Dir interface.
+#
+###
+class Dir < Rex::Post::Dir
+
+	attr_accessor :client
+
+	##
+	#
+	# Constructor
+	#
+	##
+
+	#
+	# Initializes the directory instance.
+	#
+	def initialize(client, path)
+		self.client = client
+		self.path   = path
+	end
+
+	##
+	#
+	# Enumeration
+	#
+	##
+
+	#
+	# Enumerates all of the contents of the directory.
+	#
+	def each(&block)
+		client.fs.dir.foreach(self.path, &block)
+	end
+
 
 	#
 	# The path of the directory that was opened.

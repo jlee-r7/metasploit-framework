@@ -47,7 +47,7 @@ class Stdapi < Extension
 					'name' => 'fs',
 					'ext'  => ObjectAliases.new(
 						{
-							'dir'      => self.dir,
+							'dir'      => Fs::DirExtension.new(client),
 							'file'     => Fs::FileExtension.new(client),
 							'filestat' => Fs::FileStatExtension.new(client)
 						})
@@ -57,7 +57,7 @@ class Stdapi < Extension
 					'ext'  => ObjectAliases.new(
 						{
 							'config'   => Sys::Config.new(client),
-							'process'  => self.process,
+							'process'  => Sys::ProcessExtension.new(client),
 							'registry' => self.registry,
 							'eventlog' => self.eventlog,
 							'power'    => self.power

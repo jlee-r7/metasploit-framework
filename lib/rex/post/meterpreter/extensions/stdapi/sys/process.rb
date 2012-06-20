@@ -23,25 +23,19 @@ module Sys
 # This class implements the Rex::Post::Process interface.
 #
 ##
-class Process < Rex::Post::Process
+class ProcessExtension
 
-	include Rex::Post::Meterpreter::ObjectAliasesContainer
+	attr_accessor :client
 
-	##
-	#
-	# Class methods
-	#
-	##
-
-	class << self
-		attr_accessor :client
+	def initialize(client)
+		self.client = client
 	end
 
 	#
 	# Returns the process identifier of the process supplied in key if it's
 	# valid.
 	#
-	def Process.[](key)
+	def [](key)
 		each_process { |p|
 			if (p['name'].downcase == key.downcase)
 				return p['pid']
@@ -54,7 +48,7 @@ class Process < Rex::Post::Process
 	#
 	# Attachs to the supplied process with a given set of permissions.
 	#
-	def Process.open(pid = nil, perms = nil)
+	def open(pid = nil, perms = nil)
 		real_perms = 0
 
 		if (perms == nil)
@@ -79,7 +73,7 @@ class Process < Rex::Post::Process
 	#
 	# Low-level process open.
 	#
-	def Process._open(pid, perms, inherit = false)
+	def _open(pid, perms, inherit = false)
 		request = Packet.create_request('stdapi_sys_process_attach')
 
 		if (pid == nil)
@@ -97,7 +91,7 @@ class Process < Rex::Post::Process
 
 		# If the handle is valid, allocate a process instance and return it
 		if (handle != nil)
-			return self.new(pid, handle)
+			return Process.new(client, pid, handle)
 		end
 
 		return nil
@@ -113,7 +107,7 @@ class Process < Rex::Post::Process
 	#   Suspended   => true/false
 	#   InMemory    => true/false
 	#
-	def Process.execute(path, arguments = nil, opts = nil)
+	def execute(path, arguments = nil, opts = nil)
 		request = Packet.create_request('stdapi_sys_process_execute')
 		flags   = 0
 
@@ -175,13 +169,13 @@ class Process < Rex::Post::Process
 		end
 
 		# Return a process instance
-		return self.new(pid, handle, channel)
+		return Process.new(pid, handle, channel)
 	end
 
 	#
 	# Kills one or more processes.
 	#
-	def Process.kill(*args)
+	def kill(*args)
 		request = Packet.create_request('stdapi_sys_process_kill')
 
 		args.each { |id|
@@ -196,7 +190,7 @@ class Process < Rex::Post::Process
 	#
 	# Gets the process id that the remote side is executing under.
 	#
-	def Process.getpid
+	def getpid
 		request = Packet.create_request('stdapi_sys_process_getpid')
 
 		response = client.send_request(request)
@@ -207,7 +201,7 @@ class Process < Rex::Post::Process
 	#
 	# Enumerates all of the elements in the array returned by get_processes.
 	#
-	def Process.each_process(&block)
+	def each_process(&block)
 		self.get_processes.each(&block)
 	end
 
@@ -215,7 +209,7 @@ class Process < Rex::Post::Process
 	# Returns a ProcessList of processes as Hash objects with keys for 'pid',
 	# 'ppid', 'name', 'path', 'user', 'session' and 'arch'.
 	#
-	def Process.get_processes
+	def get_processes
 		request   = Packet.create_request('stdapi_sys_process_get_processes')
 		processes = ProcessList.new
 
@@ -251,10 +245,27 @@ class Process < Rex::Post::Process
 	#
 	# An alias for get_processes.
 	#
-	def Process.processes
+	def processes
 		self.get_processes
 	end
 
+	#
+	# Factory method for creating a Process object
+	#
+	def new(*args)
+		Process.new(client, *args)
+	end
+
+end
+
+
+
+
+class Process < Rex::Post::Process
+
+	include Rex::Post::Meterpreter::ObjectAliasesContainer
+
+	attr_accessor :client
 	##
 	#
 	# Instance methods
@@ -264,8 +275,8 @@ class Process < Rex::Post::Process
 	#
 	# Initializes the process instance and its aliases.
 	#
-	def initialize(pid, handle, channel = nil)
-		self.client  = self.class.client
+	def initialize(client, pid, handle, channel = nil)
+		self.client  = client
 		self.handle  = handle
 		self.channel = channel
 

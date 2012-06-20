@@ -15,12 +15,6 @@ module Extensions
 module Stdapi
 module Fs
 
-###
-#
-# This class implements the Rex::Post::File interface and wraps interaction
-# with files on the remote machine.
-#
-###
 class FileExtension
 	attr_accessor :client
 
@@ -269,6 +263,12 @@ end
 
 
 
+###
+#
+# This class implements the Rex::Post::File interface and wraps interaction
+# with files on the remote machine.
+#
+###
 class File < Rex::Post::Meterpreter::Extensions::Stdapi::Fs::IO
 
 	include Rex::Post::File
