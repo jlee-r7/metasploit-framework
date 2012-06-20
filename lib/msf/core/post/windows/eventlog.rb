@@ -38,6 +38,10 @@ module Eventlog
 		return evntlog
 	end
 
+	def eventlog_open(name)
+		session.sys.eventlog.open(name)
+	end
+
 
 end
 end
