@@ -58,7 +58,7 @@ class Stdapi < Extension
 						{
 							'config'   => Sys::Config.new(client),
 							'process'  => Sys::ProcessExtension.new(client),
-							'registry' => self.registry,
+							'registry' => Sys::RegistryExtension.new(client),
 							'eventlog' => self.eventlog,
 							'power'    => self.power
 						})
