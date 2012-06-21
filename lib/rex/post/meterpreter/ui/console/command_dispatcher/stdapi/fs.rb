@@ -261,7 +261,7 @@ class Console::CommandDispatcher::Stdapi::Fs
 			src_items << last
 			# Use the basename of the remote filename so we don't end up with
 			# a file named c:\\boot.ini in linux
-			dest = ::Rex::Post::Meterpreter::Extensions::Stdapi::Fs::File.basename(last)
+			dest = client.fs.file.basename(last)
 		else
 			dest = last
 		end
@@ -297,7 +297,7 @@ class Console::CommandDispatcher::Stdapi::Fs
 		end
 
 		# Get a temporary file path
-		meterp_temp = Tempfile.new('meterp')
+		meterp_temp = Tempfile.new('met-edit')
 		meterp_temp.binmode
 		temp_path = meterp_temp.path
 
