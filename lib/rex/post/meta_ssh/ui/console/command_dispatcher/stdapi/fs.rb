@@ -123,7 +123,10 @@ class Console::CommandDispatcher::Stdapi::Fs
 			print_line("Usage: cat file")
 			return true
 		end
-		begin
+
+		if (client.fs.file.stat(args[0]).directory?)
+			print_error("#{args[0]} is a directory")
+		else
 			fd = client.fs.file.new(args[0], "rb")
 
 			until fd.eof?
@@ -131,9 +134,6 @@ class Console::CommandDispatcher::Stdapi::Fs
 			end
 
 			fd.close
-		rescue Errno::ENOENT
-			print_error("File does not exist")
-			return false
 		end
 
 		true
@@ -236,7 +236,7 @@ class Console::CommandDispatcher::Stdapi::Fs
 			src_items << last
 			# Use the basename of the remote filename so we don't end up with
 			# a file named c:\\boot.ini in linux
-			dest = ::Rex::Post::MetaSSH::Extensions::Stdapi::Fs::File.basename(last)
+			dest = client.fs.file.basename(last)
 		else
 			dest = last
 		end
@@ -272,7 +272,7 @@ class Console::CommandDispatcher::Stdapi::Fs
 		end
 
 		# Get a temporary file path
-		meterp_temp = Tempfile.new('metassh')
+		meterp_temp = Tempfile.new('met-edit')
 		meterp_temp.binmode
 		temp_path = meterp_temp.path
 
@@ -318,6 +318,7 @@ class Console::CommandDispatcher::Stdapi::Fs
 		path = args[0] || client.fs.dir.getwd
 		tbl  = Rex::Ui::Text::Table.new(
 			'Header'  => "Listing: #{path}",
+			'SortIndex' => 4,
 			'Columns' =>
 				[
 					'Mode',
@@ -328,26 +329,31 @@ class Console::CommandDispatcher::Stdapi::Fs
 				])
 
 		items = 0
+		stat = client.fs.file.stat(path)
+		if stat.directory?
+			# Enumerate each item...
+			# No need to sort as Table will do it for us
+			client.fs.dir.entries_with_info(path).each { |p|
 
-		# Enumerate each item...
-		client.fs.dir.entries_with_info(path).sort { |a,b| a['FileName'] <=> b['FileName'] }.each { |p|
+				tbl <<
+					[
+						p['StatBuf'] ? p['StatBuf'].prettymode : '',
+						p['StatBuf'] ? p['StatBuf'].size       : '',
+						p['StatBuf'] ? p['StatBuf'].ftype[0,3] : '',
+						p['StatBuf'] ? p['StatBuf'].mtime      : '',
+						p['FileName'] || 'unknown'
+					]
 
-			tbl <<
-				[
-					p['StatBuf'] ? p['StatBuf'].prettymode : '',
-					p['StatBuf'] ? p['StatBuf'].size       : '',
-					p['StatBuf'] ? p['StatBuf'].ftype[0,3] : '',
-					p['StatBuf'] ? p['StatBuf'].mtime      : '',
-					p['FileName'] || 'unknown'
-				]
+				items += 1
+			}
 
-			items += 1
-		}
-
-		if (items > 0)
-			print("\n" + tbl.to_s + "\n")
+			if (items > 0)
+				print("\n" + tbl.to_s + "\n")
+			else
+				print_line("No entries exist in #{path}")
+			end
 		else
-			print_line("No entries exist in #{path}")
+			print_line("#{stat.prettymode}  #{stat.size}  #{stat.ftype[0,3]}  #{stat.mtime}  #{path}")
 		end
 
 		return true
