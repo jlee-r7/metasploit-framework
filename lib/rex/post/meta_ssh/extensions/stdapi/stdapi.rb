@@ -38,7 +38,7 @@ class Stdapi < Extension
 					'name' => 'net',
 					'ext'  => ObjectAliases.new(
 						{
-							'socket'   => Rex::Post::MetaSSH::Extensions::Stdapi::Net::Socket.new(client)
+							'socket'   => Net::Socket.new(client)
 						})
 				},
 
@@ -46,7 +46,7 @@ class Stdapi < Extension
 					'name' => 'fs',
 					'ext'  => ObjectAliases.new(
 						{
-							'sftp'      => Rex::Post::MetaSSH::Extensions::Stdapi::Fs::Sftp.new(client),
+							'sftp'      => Fs::Sftp.new(client),
 							'file'      => self.file,
 							'filestat'  => self.file_stat,
 							'dir'       => self.dir
