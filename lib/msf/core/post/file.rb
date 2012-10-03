@@ -286,7 +286,7 @@ protected
 	def _read_file_meterpreter(file_name)
 		begin
 			fd = session.fs.file.new(file_name, "rb")
-		rescue ::Rex::Post::Meterpreter::RequestError => e
+		rescue ::Rex::Post::Meterpreter::RequestError
 			print_error("Failed to open file: #{file_name}")
 			return nil
 		end

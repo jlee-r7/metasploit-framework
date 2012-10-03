@@ -4,16 +4,19 @@ module Msf
 class Post
 module Unix
 
+	@@passwd_locations = [
+			"/etc/passwd",
+			"/etc/security/passwd",
+			"/etc/master.passwd",
+	]
+
+	#
 	# Returns an array of hashes each representing a user
 	# Keys are name, uid, gid, info, dir and shell
 	def get_users
 		users = []
 		etc_passwd = nil
-		[
-			"/etc/passwd",
-			"/etc/security/passwd",
-			"/etc/master.passwd",
-		].each { |f|
+		@@passwd_locations.each { |f|
 			if file_exist?(f)
 				etc_passwd = f
 				break
@@ -76,8 +79,9 @@ module Unix
 		user_dirs
 	end
 
-	# Function to get the home directory
-	#-------------------------------------------------------------------------------
+	#
+	# Return the current user's home directory
+	#
 	def get_home_dir()
 		case session.platform
 		when 'solaris'
