@@ -63,7 +63,7 @@ module Persistence
 			raise "File has not been created, maybe permission issue on the folder (#{bindir})"
 		end
 		cmd_exec("chmod +x #{binfile}")
-		vprint_status("File written to #{binfile}")
+		print_status("File written to %red%bld#{binfile}%clr")
 		return binfile
 	end
 
