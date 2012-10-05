@@ -145,6 +145,11 @@ class Service
 					raise ::Msf::RPC::Exception.new(401, "Invalid Authentication Token")
 				end
 			end
+			msg.each do |elem|
+				if elem.respond_to? :force_encoding
+					elem.force_encoding :binary
+				end
+			end
 
 			::Timeout.timeout(self.dispatcher_timeout) { self.handlers[group].send(mname, *msg) }
 
