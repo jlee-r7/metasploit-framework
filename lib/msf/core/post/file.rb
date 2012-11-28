@@ -58,7 +58,7 @@ module Msf::Post::File
 		if session.type == "meterpreter"
 			return session.fs.file.expand_path(path)
 		else
-			return cmd_exec("echo #{path}")
+			return cmd_exec("echo #{path}").strip
 		end
 	end
 
@@ -278,7 +278,7 @@ module Msf::Post::File
 	# system
 	#
 	def upload_file(remote, local)
-		write_file(remote, ::File.read(local))
+		write_file(remote, ::File.open(local, "rb"){|fd| fd.read(fd.stat.size)})
 	end
 
 	#
