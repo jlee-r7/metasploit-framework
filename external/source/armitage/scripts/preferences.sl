@@ -114,7 +114,12 @@ sub loadPreferences {
 
 sub loadDatabasePreferences {
 	if ($yaml_file eq "" || !-exists $yaml_file) {
-		$yaml_file = getFileProper($BASE_DIRECTORY, "config", "database.yml");
+		if (thisIsTheirCommercialStuff()) {
+			$yaml_file = getFileProper($BASE_DIRECTORY, "ui", "config", "database.yml");
+		}
+		else {
+			$yaml_file = getFileProper($BASE_DIRECTORY, "config", "database.yml");
+		}
 	}
 
 	if (!-exists $yaml_file) {
@@ -130,10 +135,15 @@ sub loadDatabasePreferences {
 }
 
 sub savePreferences {
-	local('$file');
-	$file = getFileProper(systemProperties()["user.home"], ".armitage.prop");
-	if (-exists getFileParent($file)) {
-		[$preferences save: [new java.io.FileOutputStream: $file], "Armitage Configuration"];
+	try {
+		local('$file $exception');
+		$file = getFileProper(systemProperties()["user.home"], ".armitage.prop");
+		if (-exists getFileParent($file)) {
+			[$preferences save: [new java.io.FileOutputStream: $file], "Armitage Configuration"];
+		}
+	}
+	catch $exception {
+		showError("I could not save your preferences:\n $+ $exception");
 	}
 }
 
@@ -152,7 +162,7 @@ sub updatePrefModel {
 	
 	foreach $key => $value (convertAll($preferences)) {
 		($component, $name, $type) = split('\\.', $key);
-		if ($type eq "color" || $type eq "shortcut" || $type eq "font" || $type eq "folder") {
+		if ($type eq "color" || $type eq "shortcut" || $type eq "font" || $type eq "folder" || $type eq "file") {
 			$type = "$type \u271A";
 		}
 
@@ -215,6 +225,14 @@ sub createPreferencesTab {
 			else if ($type eq "folder") {
 				local('$file');
 				$file = chooseFile($dirsonly => 1);
+				if ($file !is $null) {
+					[$model setValueAtRow: $row, "value", $file];
+					[$model fireListeners];
+				}
+			}
+			else if ($type eq "file") {
+				local('$file');
+				$file = chooseFile();
 				if ($file !is $null) {
 					[$model setValueAtRow: $row, "value", $file];
 					[$model fireListeners];
@@ -327,6 +345,7 @@ sub createPreferencesTab {
 sub setupBaseDirectory {
 	local('%o');
 	%o = call($client, "module.options", "post", "multi/gather/dns_bruteforce");
+
 	if ("NAMELIST" in %o && "default" in %o["NAMELIST"]) {
 		$BASE_DIRECTORY = getFileParent(getFileParent(getFileParent(getFileParent(%o["NAMELIST"]["default"]))));
 		$DATA_DIRECTORY = getFileParent(getFileParent(%o["NAMELIST"]["default"]));
@@ -371,4 +390,9 @@ sub dataDirectory {
 	}
 
 	return $f;
+}
+
+sub thisIsTheirCommercialStuff {
+	# check if we're living in a Metasploit 4.5+ installer environment.
+	return iff("*app*pro*" iswm $BASE_DIRECTORY);
 }

@@ -36,6 +36,8 @@ sub host_selected_items {
 	$h = menu($1, "Host", 'H');
 
 		$o = menu($h, "Operating System", 'O');
+		item($o, "Android", 'A', setHostValueFunction($2, "os_name", "Android"));
+		item($o, "Apple iOS", 'i', setHostValueFunction($2, "os_name", "Apple iOS"));
 		item($o, "Cisco IOS", 'C', setHostValueFunction($2, "os_name", "Cisco IOS"));
 		item($o, "FreeBSD", 'F', setHostValueFunction($2, "os_name", "FreeBSD"));
 		item($o, "Linux", 'L', setHostValueFunction($2, "os_name", "Linux"));
@@ -50,6 +52,7 @@ sub host_selected_items {
 			item($i, '1. 95/98/2000', '1', setHostValueFunction($2, "os_name", "Micosoft Windows", "os_flavor", "2000"));
 			item($i, '2. XP/2003', '2', setHostValueFunction($2, "os_name", "Microsoft Windows", "os_flavor", "XP"));
 			item($i, '3. Vista/7', '3', setHostValueFunction($2, "os_name", "Microsoft Windows", "os_flavor", "Vista"));
+			item($i, '4. 8/RT', '4', setHostValueFunction($2, "os_name", "Microsoft Windows", "os_flavor", "8"));
 
 		item($h, "Remove Host", 'R', clearHostFunction($2));
 }
@@ -72,6 +75,7 @@ sub view_items {
 	item($1, 'Downloads', 'D', { thread(&createDownloadBrowser); });
 	item($1, 'Jobs', 'J', { thread(&createJobsTab); });
 	item($1, 'Loot', 'L', { thread(&createLootBrowser) });
+	item($1, 'Script Console', 'S', { showScriptConsole(); });
 
 	setupMenu($1, "view_middle", @());
 
@@ -150,6 +154,8 @@ sub armitage_items {
 		item($m, 'Bind (connect to)', 'B', &connect_for_shellz);
 		item($m, 'Reverse (wait for)', 'R', &listen_for_shellz); 
 
+	item($1, 'Scripts...', 'S', { showScriptManager(); });
+
 	setupMenu($1, "main_middle", @());
 
 	separator($1);
@@ -183,13 +189,19 @@ sub main_attack_items {
 
 sub gotoURL {
 	return lambda({ 
-		[[Desktop getDesktop] browse: $url];
+		if ([Desktop isDesktopSupported]) {
+			[[Desktop getDesktop] browse: $url];
+		}
+		else {
+			ask("Browse to this URL:", $url);
+		}
 	}, $url => [[new URL: $1] toURI]);
 }
 
 sub help_items {
 	item($1, "Homepage", 'H', gotoURL("http://www.fastandeasyhacking.com/")); 
-	item($1, "Tutorial", 'T', gotoURL("http://www.fastandeasyhacking.com/manual")); 
+	item($1, "Tutorial", 'T', gotoURL("http://www.fastandeasyhacking.com/manual"));
+	item($1, "Scripts", 'S', gotoURL("https://github.com/rsmudge/cortana-scripts"));
 	item($1, "Issue Tracker", 'I', gotoURL("http://code.google.com/p/armitage/issues/list")); 
 	item($1, "User Survey", 'U', gotoURL("https://docs.google.com/spreadsheet/viewform?formkey=dEdSNGdJY2Z1LVloWXBnX2o4SkdGZHc6MQ"));
 	setupMenu($1, "help", @());
@@ -228,6 +240,23 @@ sub init_menus {
 	dynmenu($top, "Help", 'H', &help_items);
 
 	# setup some global keyboard shortcuts...
+	[$frame bindKey: "Ctrl+I", { 
+		thread({
+			chooseSession($null, $null, $null, {
+				local('$session');
+				$session = sessionData($1);
+				if ($session is $null) {
+					showError("Session $1 does not exist");
+				}
+				else if ($session['desc'] eq "Meterpreter") {
+					createMeterpreterTab($1);
+				}
+				else {
+					createShellSessionTab(\$session, $sid => $1);
+				}
+			});
+		});
+	}];
 	[$frame bindKey: "Ctrl+N", { thread(&createConsoleTab); }];
 	[$frame bindKey: "Ctrl+W", { [$frame openActiveTab]; }];
 	[$frame bindKey: "Ctrl+D", { [$frame closeActiveTab]; }];

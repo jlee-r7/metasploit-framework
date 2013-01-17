@@ -1,8 +1,4 @@
 ##
-# $Id$
-##
-
-##
 # This file is part of the Metasploit Framework and may be subject to
 # redistribution and commercial restrictions. Please see the Metasploit
 # web site for more information on licensing and terms of use.
@@ -24,7 +20,6 @@ class Metasploit3 < Msf::Auxiliary
 	def initialize
 		super(
 			'Name'        => 'SSH Public Key Login Scanner',
-			'Version'     => '$Revision$',
 			'Description' => %q{
 				This module will test ssh logins on a range of machines using
 				a defined private key file, and report successful logins.
@@ -179,7 +174,8 @@ class Metasploit3 < Msf::Auxiliary
 				:key_data     => key_data,
 				:disable_agent => true,
 				:config => false,
-				:record_auth_info => true
+				:record_auth_info => true,
+				:proxies	=> datastore['Proxies']
 			}
 			opt_hash.merge!(:verbose => :debug) if datastore['SSH_DEBUG']
 			begin

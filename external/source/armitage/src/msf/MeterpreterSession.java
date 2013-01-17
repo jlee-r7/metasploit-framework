@@ -94,6 +94,9 @@ public class MeterpreterSession implements Runnable {
 			if (c.text.startsWith("ls\n")) {
 				maxwait *= 2;
 			}
+			else if (c.text.startsWith("read ")) {
+				maxwait *= 2;
+			}
 			else if (c.text.startsWith("webcam_snap ")) {
 				expectedReads = 3;
 			}
@@ -145,7 +148,34 @@ public class MeterpreterSession implements Runnable {
 				readUntilSuccessful(c, false);
 				return;
 			}
-			else if (c.text.startsWith("sysinfo\n") && !teammode) {
+			else if (c.text.startsWith("sysinfo") && !teammode) {
+				readUntilSuccessful(c, false);
+				return;
+			}
+			else if (c.text.startsWith("ipconfig") && !teammode) {
+				readUntilSuccessful(c, false);
+				return;
+			}
+			else if (c.text.startsWith("list_tokens") && !teammode) {
+				readUntilSuccessful(c, false);
+				return;
+			}
+			else if (c.text.startsWith("impersonate_token") && !teammode) {
+				readUntilSuccessful(c, false);
+				return;
+			}
+			else if (c.text.startsWith("add_user") && !teammode) {
+				/* when -h [host] is specified, attempts to add a user on another
+				   host. In this case, output is split into multiple chunks.
+				   This applies to add_localgroup_user and add_group_user too. */
+				readUntilSuccessful(c, false);
+				return;
+			}
+			else if (c.text.startsWith("add_localgroup_user") && !teammode) {
+				readUntilSuccessful(c, false);
+				return;
+			}
+			else if (c.text.startsWith("add_group_user") && !teammode) {
 				readUntilSuccessful(c, false);
 				return;
 			}

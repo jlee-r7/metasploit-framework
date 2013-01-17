@@ -1,8 +1,4 @@
 ##
-# $Id$
-##
-
-##
 # This file is part of the Metasploit Framework and may be subject to
 # redistribution and commercial restrictions. Please see the Metasploit
 # web site for more information on licensing and terms of use.
@@ -24,13 +20,12 @@ class Metasploit3 < Msf::Auxiliary
 		super(update_info(info,
 			'Name'   		=> 'MS09-020 IIS6 WebDAV Unicode Authentication Bypass',
 			'Description'	=> %q{
-				This module attempts to to bypass authentication using the WebDAV IIS6 
+				This module attempts to to bypass authentication using the WebDAV IIS6
 				Unicode vulnerability discovered by Kingcope. The vulnerability appears
-				to be exploitable where WebDAV is enabled on the IIS6 server, and any 
+				to be exploitable where WebDAV is enabled on the IIS6 server, and any
 				protected folder requires either Basic, Digest or NTLM authentication.
 			},
 			'Author' 		=> [ 'et', 'patrick' ],
-			'Version'		=> '$Revision$',
 			'License'		=> MSF_LICENSE,
 			'References'   =>
 				[
@@ -50,7 +45,7 @@ class Metasploit3 < Msf::Auxiliary
 	end
 
 	def run_host(ip)
-		tpath = datastore['PATH']
+		tpath = normalize_uri(datastore['PATH'])
 		if tpath[-1,1] != '/'
 			tpath += '/'
 		end
