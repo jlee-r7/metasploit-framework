@@ -1,4 +1,10 @@
 # -*- coding: binary -*-
+
+require 'rex/socket'
+
+module Rex
+module IO
+
 #
 # This class implements a ring buffer with "cursors" in the form of sequence numbers.
 # To use this class, pass in a file descriptor and a ring size, the class will read
@@ -8,23 +14,26 @@
 # passing in the sequence number and all data newer than that sequence will be
 # returned, along with a new sequence to read from.
 #
-
-require 'rex/socket'
-
-module Rex
-module IO
-
 class RingBuffer
-
-	attr_accessor :queue     # The data queue, essentially an array of two-element arrays, containing a sequence and data buffer
-	attr_accessor :seq       # The next available sequence number
-	attr_accessor :fd        # The associated socket or IO object for this ring buffer
-	attr_accessor :size      # The number of available slots in the queue
-	attr_accessor :mutex     # The mutex locking access to the queue
-	attr_accessor :beg       # The index of the earliest data fragment in the ring
-	attr_accessor :cur       # The sequence number of the earliest data fragment in the ring
-	attr_accessor :monitor   # The thread handle of the built-in monitor when used
-	attr_accessor :monitor_thread_error  # :nodoc: #
+	# The data queue, essentially an array of two-element arrays,
+	# containing a sequence and data buffer
+	attr_accessor :queue
+	# The next available sequence number
+	attr_accessor :seq
+	# The associated socket or IO object for this ring buffer
+	attr_accessor :fd
+	# The number of available slots in the queue
+	attr_accessor :size
+	# The mutex locking access to the queue
+	attr_accessor :mutex
+	# The index of the earliest data fragment in the ring
+	attr_accessor :beg
+	# The sequence number of the earliest data fragment in the ring
+	attr_accessor :cur
+	# The thread handle of the built-in monitor when used
+	attr_accessor :monitor
+	# :nodoc: #
+	attr_accessor :monitor_thread_error
 
 	#
 	# Create a new ring buffer
@@ -121,8 +130,9 @@ class RingBuffer
 	end
 
 	#
-	# The read_data method returns a two element array with the new reader cursor (a sequence number)
-	# and the returned data buffer (if any). A result of nil/nil indicates that no data is available
+	# The read_data method returns a two element array with the new reader
+	# cursor (a sequence number) and the returned data buffer (if any). A
+	# result of nil/nil indicates that no data is available
 	#
 	def read_data(ptr=nil)
 		self.mutex.synchronize do
@@ -174,8 +184,8 @@ class RingBuffer
 	end
 
 	#
-	# The base_sequence method returns the earliest sequence number in the queue. This is zero until
-	# all slots are filled and the ring rotates.
+	# The base_sequence method returns the earliest sequence number in the
+	# queue. This is zero until all slots are filled and the ring rotates.
 	#
 	def base_sequence
 		self.mutex.synchronize do
@@ -185,15 +195,14 @@ class RingBuffer
 	end
 
 	#
-	# The last_sequence method returns the "next" sequence number where new data will be
-	# available.
+	# The "next" sequence number where new data will be available.
 	#
 	def last_sequence
 		self.seq
 	end
 
 	#
-	# The create_steam method assigns a IO::Socket compatible object to the ringer buffer
+	# Assigns a IO::Socket compatible object to the ringer buffer
 	#
 	def create_stream
 		Stream.new(self)
