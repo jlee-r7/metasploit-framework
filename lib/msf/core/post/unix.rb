@@ -23,15 +23,16 @@ module Unix
 				break
 			end
 		}
-		cmd_out = read_file(etc_passwd).split("\n")
-		cmd_out.each do |l|
+
+		passwd_data = read_file(etc_passwd).split("\n")
+		passwd_data.each do |l|
 			entry = {}
 			user_field = l.split(":")
-			entry[:name] = user_field[0]
-			entry[:uid] = user_field[2]
-			entry[:gid] = user_field[3]
-			entry[:info] = user_field[4]
-			entry[:dir] = user_field[5]
+			entry[:name]  = user_field[0]
+			entry[:uid]   = user_field[2]
+			entry[:gid]   = user_field[3]
+			entry[:info]  = user_field[4]
+			entry[:dir]   = user_field[5]
 			entry[:shell] = user_field[6]
 			users << entry
 		end
