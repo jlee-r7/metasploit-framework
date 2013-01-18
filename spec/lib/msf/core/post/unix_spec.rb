@@ -4,7 +4,7 @@ require 'msf/core/post/unix'
 describe Msf::Post::Unix do
 	let :passwd_data do
 		%Q|bin:x:1:1:bin:/bin:/bin/false\n| +
-		%Q|postgres:x:70:70:added by portage for postgresql-server:/var/lib/postgresql:/bin/bash\n|
+		%Q|postgres:x:70:71:added by portage for postgresql-server:/var/lib/postgresql:/bin/bash\n|
 	end
 	let :group_data do
 		%Q|root:x:0:root\n| +
@@ -14,7 +14,7 @@ describe Msf::Post::Unix do
 	subject do
 		klass = Class.new { include Msf::Post::Unix; attr_accessor :session }
 		s = klass.new
-				s.session = mock("session")
+		s.session = mock("session")
 		s.stub(:read_file) do |fname|
 			case fname
 			when "/etc/group"
@@ -30,7 +30,7 @@ describe Msf::Post::Unix do
 	end
 
 	describe "#get_users" do
-		context "with existent /etc/passwd" do
+		context "with /etc/passwd" do
 			it "should parse simple /etc/passwd" do
 				subject.should_receive(:file_exist?).with("/etc/passwd").and_return(true)
 
@@ -44,12 +44,12 @@ describe Msf::Post::Unix do
 
 				pg = users.last
 				pg[:uid].should == "70"
-				pg[:gid].should == "70"
+				pg[:gid].should == "71"
 				pg[:dir].should == "/var/lib/postgresql"
 				pg[:shell].should == "/bin/bash"
 			end
 		end
-		context "without /etc/passwd" do
+		context "with non-existent /etc/passwd" do
 			it "should return an empty array" do
 				subject.should_receive(:file_exist?).at_least(1).times.and_return(false)
 				subject.get_users.should be_empty

@@ -6,8 +6,8 @@ module Unix
 
 	@@passwd_locations = [
 			"/etc/passwd",
-			"/etc/security/passwd",
-			"/etc/master.passwd",
+			"/etc/security/passwd",  # AIX
+			"/etc/master.passwd",    # BSD
 	]
 
 	#
