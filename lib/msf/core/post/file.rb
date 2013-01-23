@@ -10,7 +10,7 @@ module Msf::Post::File
 			e_path = session.fs.file.expand_path(path) rescue path
 			session.fs.dir.chdir(e_path)
 		else
-			session.shell_command_token("cd '#{path}'")
+			session.shell_command_token("cd #{path}")
 		end
 	end
 
@@ -23,11 +23,11 @@ module Msf::Post::File
 			return session.fs.dir.getwd
 		else
 			if session.platform =~ /win/
-				# XXX: %CD% only exists on XP and newer, figure something out for NT4
-				# and 2k
-				return session.shell_command_token("echo %CD%")
+				# The %CD% variable only exists on XP and newer, but the cd command
+				# should work everywhere
+				return session.shell_command_token("cd").strip
 			else
-				return session.shell_command_token("pwd")
+				return session.shell_command_token("pwd").strip
 			end
 		end
 	end
@@ -58,7 +58,20 @@ module Msf::Post::File
 				end
 		else
 			if session.platform =~ /win/
-				# XXX
+				# Note that IF commands need to be wrapped in parens for
+				# cmd_exec to work correctly
+				case test
+				when :exist,:exists
+					f = cmd_exec(%Q^(IF exist "#{path}" (echo true) ELSE (echo false))^)
+				when :file
+					# No direct way to test that it's a file, check for existance and
+					# that it's not a directory.
+					f = cmd_exec(%Q^(IF exist "#{path}" (if not exist "#{path}\\nul" (echo true)) ELSE (echo false))^)
+				when :executable
+					# XXX ???
+				when :dir,:directory
+					f = cmd_exec(%Q^(IF exist "#{path}\\nul" (echo true) ELSE (echo false))^)
+				end
 			else
 				arg = case test
 					when :exist,:exists;  "-e"
@@ -67,8 +80,8 @@ module Msf::Post::File
 					when :dir,:directory; "-d"
 					end
 				f = cmd_exec("test #{arg} '#{path}' && echo true")
-				result = !!(f and f =~ /true/)
 			end
+			result = !!(f and f =~ /true/)
 		end
 
 		result
@@ -282,7 +295,7 @@ module Msf::Post::File
 	end
 
 	#
-	# Read a local file +local+ and write it as +remote+ on the remote file 
+	# Read a local file +local+ and write it as +remote+ on the remote file
 	# system
 	#
 	def upload_file(remote, local)
@@ -314,7 +327,7 @@ module Msf::Post::File
 	#
 	def rename_file(new_file, old_file)
 		#TODO:  this is not ideal as the file contents are sent to meterp server and back to the client
-		write_file(new_file, read_file(old_file)) 
+		write_file(new_file, read_file(old_file))
 		rm_f(old_file)
 	end
 	alias :move_file :rename_file
