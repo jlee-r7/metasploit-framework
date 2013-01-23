@@ -211,6 +211,8 @@ end
 class Post < Msf::Module
 	include PostMixin
 
+	require 'msf/core/post/mixins'
+
 	def setup; end
 
 	def type
