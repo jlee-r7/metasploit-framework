@@ -46,7 +46,10 @@ class Metasploit4 < Msf::Post
 				"/etc/passwd",
 				"/etc/master.passwd"
 			].each { |path|
-				ret = true if file?(path)
+				if file?(path)
+					ret = true
+					break
+				end
 			}
 
 			ret
@@ -59,7 +62,10 @@ class Metasploit4 < Msf::Post
 				"/etc/",
 				"/tmp"
 			].each { |path|
-				ret = true if directory?(path)
+				if directory?(path)
+					ret = true
+					break
+				end
 			}
 
 			ret
@@ -143,7 +149,7 @@ class Metasploit4 < Msf::Post
 	end
 
 	def cleanup
-		vprint_status("Cleanup: changing working directory back to #{@old_pwd}")
+		vprint_status("Cleanup: changing working directory back to #{@old_pwd.inspect}")
 		cd(@old_pwd)
 		super
 	end
