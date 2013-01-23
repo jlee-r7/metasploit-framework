@@ -17,6 +17,7 @@ module Msf::Post::File
 	#
 	# Returns the current working directory in the remote session
 	#
+	# @return [String] The session's current working directory
 	def pwd
 		if session.type == "meterpreter"
 			return session.fs.dir.getwd
@@ -32,30 +33,9 @@ module Msf::Post::File
 	end
 
 	#
-	# See if +path+ exists on the remote system and is a directory
-	#
-	def directory?(path)
-		if session.type == "meterpreter"
-			stat = session.fs.file.stat(path) rescue nil
-			return false unless stat
-			return stat.directory?
-		else
-			if session.platform =~ /win/
-				# XXX
-			else
-				f = session.shell_command_token("test -d '#{path}' && echo true")
-				return false if f.nil? or f.empty?
-				return false unless f =~ /true/
-				return true
-			end
-		end
-	end
-
-	alias directory_exist? directory?
-
-	#
 	# Expand any environment variables to return the full path specified by +path+.
 	#
+	# @return [String] The (hopefully) expanded string
 	def expand_path(path)
 		if session.type == "meterpreter"
 			return session.fs.file.expand_path(path)
@@ -64,50 +44,68 @@ module Msf::Post::File
 		end
 	end
 
+	# Run various tests on remote files, similar to the Unix test(1) command.
 	#
-	# See if +path+ exists on the remote system and is a regular file
-	#
-	def file?(path)
+	# @param path [String]
+	# @return [Boolean]
+	def file_test(path, test)
 		if session.type == "meterpreter"
 			stat = session.fs.file.stat(path) rescue nil
-			return false unless stat
-			return stat.file?
+			result = case test
+				when :exist, :exists; !!(stat)
+				when :file;           !!(stat && stat.file?)
+				when :dir,:directory; !!(stat && stat.directory?)
+				end
 		else
 			if session.platform =~ /win/
 				# XXX
 			else
-				f = session.shell_command_token("test -f '#{path}' && echo true")
-				return false if f.nil? or f.empty?
-				return false unless f =~ /true/
-				return true
+				arg = case test
+					when :exist,:exists;  "-e"
+					when :file;           "-f"
+					when :executable;     "-x"
+					when :dir,:directory; "-d"
+					end
+				f = cmd_exec("test #{arg} '#{path}' && echo true")
+				result = !!(f and f =~ /true/)
 			end
 		end
+
+		result
+	end
+	#
+	# Check for existence of +path+ on the remote file system
+	#
+	# @param path (see #file_test)
+	def exist?(path)
+		file_test(path, :exist)
+	end
+
+	#
+	# See if +path+ exists on the remote system and is a directory
+	#
+	# @see #exist?
+	def directory?(path)
+		file_test(path, :dir)
+	end
+
+	alias directory_exist? directory?
+
+	#
+	# See if +path+ exists on the remote system and is a regular file
+	#
+	# @see #exist?
+	def file?(path)
+		file_test(path, :file)
 	end
 
 	alias file_exist? file?
 
 	#
-	# Check for existence of +path+ on the remote file system
-	#
-	def exist?(path)
-		if session.type == "meterpreter"
-			stat = session.fs.file.stat(path) rescue nil
-			return !!(stat)
-		else
-			if session.platform =~ /win/
-				# XXX
-			else
-				f = session.shell_command_token("test -e '#{path}' && echo true")
-				return false if f.nil? or f.empty?
-				return false unless f =~ /true/
-				return true
-			end
-		end
-	end
-
-	#
 	# Remove a remote file
 	#
+	# @param file [String] Remote file name
+	# @return [void]
 	def file_rm(file)
 		if session.type == "meterpreter"
 			session.fs.file.rm(file)
@@ -217,6 +215,8 @@ module Msf::Post::File
 	# Platform-agnostic file read.  Returns contents of remote file +file_name+
 	# as a String.
 	#
+	# @param file_name [String] Remote file to read
+	# @return [String] Contents of remote file +file_name+
 	def read_file(file_name)
 		data = nil
 		if session.type == "meterpreter"
@@ -236,8 +236,11 @@ module Msf::Post::File
 	# Platform-agnostic file write. Writes given object content to a remote file.
 	# Returns Boolean true if successful
 	#
-	# NOTE: *This is not binary-safe on Windows shell sessions!*
+	# @note *This is not binary-safe on Windows shell sessions!*
 	#
+	# @param file_name [String] Remote file to stick the +data+ in
+	# @param data [String] Stuff to add to the end of the file
+	# @return [true]
 	def write_file(file_name, data)
 		if session.type == "meterpreter"
 			fd = session.fs.file.new(file_name, "wb")
@@ -258,8 +261,11 @@ module Msf::Post::File
 	# Platform-agnostic file append. Appends given object content to a remote file.
 	# Returns Boolean true if successful
 	#
-	# NOTE: *This is not binary-safe on Windows shell sessions!*
+	# @note *This is not binary-safe on Windows shell sessions!*
 	#
+	# @param file_name (see write_file)
+	# @param data [String] Stuff to add to the end of the file
+	# @return [true]
 	def append_file(file_name, data)
 		if session.type == "meterpreter"
 			fd = session.fs.file.new(file_name, "ab")
@@ -286,6 +292,8 @@ module Msf::Post::File
 	#
 	# Delete remote files
 	#
+	# @param remote_files [Array<String>] File(s) to remove
+	# @return [void]
 	def rm_f(*remote_files)
 		remote_files.each do |remote|
 			if session.type == "meterpreter"
@@ -475,6 +483,7 @@ protected
 					max=$new; do \
 				i=`expr $i + 1`; str=$str$str;\
 			done; echo $max'
+		calc_line_max.gsub!("\t", "")
 		line_max = session.shell_command_token(calc_line_max).to_i
 
 		# Fall back to a conservative 4k which should work on even the most

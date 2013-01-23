@@ -36,8 +36,11 @@ module Common
 	# On shell sessions, this passes +cmd+ directly the session's
 	# +shell_command_token+ method.
 	#
-	# Returns a (possibly multi-line) String.
-	#
+	# @param cmd [String] The command to execute
+	# @param args [String] The rest of the commandline. Note that in most cases,
+	#   this will simply be concatenated with +cmd+ to form the final
+	#   commandline for passing to system() or equivalent.
+	# @return [String] Output from +cmd+, possibly multiple lines
 	def cmd_exec(cmd, args=nil, time_out=15)
 		case session.type
 		when /meterpreter/

@@ -14,6 +14,11 @@ module Unix
 	# Returns an array of hashes each representing a user
 	# Keys are name, uid, gid, info, dir and shell
 	#
+	# @example
+	#   get_users # on a solaris system
+	#   # => [{:name=>"root", :uid=>"0", :gid=>"1", :info=>"Super-User", :dir=>"/", :shell=>"/usr/local/bin/bash"} ]
+	#
+	# @return [Array<Hash>]
 	def get_users
 		users = []
 		etc_passwd = nil
@@ -41,8 +46,13 @@ module Unix
 
 	#
 	# Returns an array of hashes each hash representing a user group
-	# Keys are name, gid and users
+	# Keys are +:name+, +:gid+ and +:users+
 	#
+	# @example
+	#	  get_groups
+	#   # => [{:name=>"root", :gid=>"0", :users=>"root\r"}
+	#
+	# @return [Array<Hash>]
 	def get_groups
 		groups = []
 		cmd_out = read_file("/etc/group").split("\n")
@@ -88,6 +98,10 @@ module Unix
 	#
 	# Return the current user's home directory
 	#
+	# @example
+	#   get_home_dir
+	#   # => "/root"
+	# @return [String]
 	def get_home_dir()
 		case session.platform
 		when 'solaris'
