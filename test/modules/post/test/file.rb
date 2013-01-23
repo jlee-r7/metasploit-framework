@@ -1,9 +1,9 @@
 
-require 'module_test'
+require File.join(File.dirname(__FILE__), *(['..']*3), 'lib', 'module_test')
 
 #load 'test/lib/module_test.rb'
 #load 'lib/rex/text.rb'
-#load 'lib/msf/core/post/file.rb'
+load 'lib/msf/core/post/file.rb'
 
 class Metasploit4 < Msf::Post
 

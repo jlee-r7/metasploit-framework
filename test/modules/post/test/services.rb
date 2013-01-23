@@ -2,6 +2,8 @@
 # by kernelsmith (kernelsmith+\x40+kernelsmith+\.com)
 #
 
+require File.join(File.dirname(__FILE__), *(['..']*3), 'lib', 'module_test')
+
 require 'msf/core'
 require 'rex'
 require 'msf/core/post/windows/services'

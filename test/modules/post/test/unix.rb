@@ -1,5 +1,5 @@
 
-require 'test/lib/module_test'
+require File.join(File.dirname(__FILE__), *(['..']*3), 'lib', 'module_test')
 
 #load 'test/lib/module_test.rb'
 #load 'lib/rex/text.rb'
@@ -16,7 +16,7 @@ class Metasploit4 < Msf::Post
 	def initialize(info={})
 		super( update_info( info,
 				'Name'          => 'Testing remote unix system manipulation',
-				'Description'   => %q{ This module will test Post::File API methods },
+				'Description'   => %q{ This module will test Post::Unix API methods },
 				'License'       => MSF_LICENSE,
 				'Author'        => [ 'egypt'],
 				'Version'       => '$Revision$',
@@ -38,7 +38,6 @@ class Metasploit4 < Msf::Post
 					have_root = true
 				}
 			end
-			ret
 			ret &&= have_root
 
 			ret
