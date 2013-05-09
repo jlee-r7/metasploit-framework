@@ -10,7 +10,7 @@ module Text
 # This class implements output against a file and stdout
 #
 ###
-class Output::Tee < Rex::Ui::Text::Output
+class Output::Tee < Rex::Ui::Text::Output::Stdio
 
 	attr_accessor :fd
 
@@ -19,24 +19,11 @@ class Output::Tee < Rex::Ui::Text::Output
 		super()
 	end
 
-	def supports_color?
-		case config[:color]
-		when true
-			return true
-		when false
-			return false
-		else # auto
-			term = Rex::Compat.getenv('TERM')
-			return (term and term.match(/(?:vt10[03]|xterm(?:-color)?|linux|screen|rxvt)/i) != nil)
-		end
-	end
-
 	#
 	# Prints the supplied message to file output.
 	#
 	def print_raw(msg = '')
-		$stdout.print(msg)
-		$stdout.flush
+		super
 
 		return if not self.fd
 		self.fd.write(msg)
