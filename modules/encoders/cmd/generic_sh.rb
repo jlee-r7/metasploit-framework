@@ -61,7 +61,7 @@ class Metasploit3 < Msf::Encoder
   #
   def encode_block_perl(state, buf)
 
-    hex = buf.unpack("H*")
+    hex = buf.unpack("H*").join
     cmd = 'perl -e '
     qot = ',-:.=+!@#$%^&'
 
@@ -81,16 +81,23 @@ class Metasploit3 < Msf::Encoder
     # Can we use single quotes to enclose the command string?
     if (state.badchars.include?("'"))
 
-      if (state.badchars.match(/\(|\)/))
-
-        # No paranthesis...
-        raise RuntimeError
+      # Without quotes, we also need backslash to be able to use parens
+      # so the shell doesn't try to interpreter them.
+      if (state.badchars.match(/[()\\]/))
+        # We don't have parens, quotes, or backslashes so we have to use
+        # barewords on the commandline for the argument to the pack
+        # function. As a consequence, we can't use things that the shell
+        # would interpret, so $ and & become badchars.
+        qot.delete("$")
+        qot.delete("&")
+        raise RuntimeError if qot.length == 0
+        sep = qot[0].chr
+        cmd << "system -e pack -e qq#{sep}H#{hex.length}#{sep},qq#{sep}#{hex}#{sep}"
+      else
+        cmd << "system\\(pack\\(qq#{sep}H\\*#{sep},qq#{sep}#{hex}#{sep}\\)\\)"
       end
-
-      cmd << "system\\(pack\\(qq#{sep}H\\*#{sep},qq#{sep}#{hex}#{sep}\\)\\)"
-
     else
-      if (state.badchars.match(/\(|\)/))
+      if (state.badchars.match(/[()]/))
         if (state.badchars.include?(" "))
           # No spaces allowed, no paranthesis, give up...
           raise RuntimeError
