@@ -182,6 +182,14 @@ class ClientCore < Extension
     # Load in the stdapi extension if not allready present so we can determine the target pid architecture...
     client.core.use( "stdapi" ) if not client.ext.aliases.include?( "stdapi" )
 
+    # Unceremoniously kill all the channels we've accrued so far.
+    # TODO: make the server smart enough to take channels (portfwds,
+    # processes, etc) with us after the migrate so we don't have to do
+    # this.
+    client.channels.each do |id, chan|
+      chan._close
+    end
+
     # Determine the architecture for the pid we are going to migrate into...
     client.sys.process.processes.each { | p |
       if( p['pid'] == pid )
