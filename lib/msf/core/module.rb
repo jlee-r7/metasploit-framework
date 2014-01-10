@@ -749,7 +749,7 @@ class Module
   # Constants indicating the reason for an unsuccessful module attempt
   #
   module Failure
-    
+
     #
     # No confidence in success or failure
     #
@@ -814,7 +814,7 @@ class Module
     # The payload was delivered but no session was opened (AV, network, etc)
     #
     PayloadFailed   = 'payload-failed'
-  end	
+  end
 
 
   ##

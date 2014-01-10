@@ -2,9 +2,9 @@
 
 module Msf::Post::File
 
-  #
   # Change directory in the remote session to +path+
   #
+  # @param path [String] Remote filesystem path
   def cd(path)
     if session.type == "meterpreter"
       e_path = session.fs.file.expand_path(path) rescue path
@@ -14,9 +14,9 @@ module Msf::Post::File
     end
   end
 
-  #
   # Returns the current working directory in the remote session
   #
+  # @return [String] Full path of the current working directory
   def pwd
     if session.type == "meterpreter"
       return session.fs.dir.getwd
@@ -34,6 +34,9 @@ module Msf::Post::File
   #
   # See if +path+ exists on the remote system and is a directory
   #
+  # @param path [String] Remote filesystem path
+  # @return [true] if +path+ exists and is a directory
+  # @return [false] otherwise
   def directory?(path)
     if session.type == "meterpreter"
       stat = session.fs.file.stat(path) rescue nil
@@ -65,6 +68,9 @@ module Msf::Post::File
   #
   # See if +path+ exists on the remote system and is a regular file
   #
+  # @param path [String] Remote filesystem path
+  # @return [true] if +path+ exists and is a regular file
+  # @return [false] otherwise
   def file?(path)
     if session.type == "meterpreter"
       stat = session.fs.file.stat(path) rescue nil
@@ -215,6 +221,8 @@ module Msf::Post::File
   # Platform-agnostic file read.  Returns contents of remote file +file_name+
   # as a String.
   #
+  # @param file_name [String] Name of a remote file to read
+  # @return [String] Contents of +file_name+ on the remote filesystem
   def read_file(file_name)
     data = nil
     if session.type == "meterpreter"
@@ -236,6 +244,9 @@ module Msf::Post::File
   #
   # NOTE: *This is not binary-safe on Windows shell sessions!*
   #
+  # @param file_name [String] Name of the remote file to write
+  # @param data [String] Contents of the file
+  # @return [true]
   def write_file(file_name, data)
     if session.type == "meterpreter"
       fd = session.fs.file.new(file_name, "wb")
@@ -252,12 +263,13 @@ module Msf::Post::File
     return true
   end
 
-  #
   # Platform-agnostic file append. Appends given object content to a remote file.
   # Returns Boolean true if successful
   #
   # NOTE: *This is not binary-safe on Windows shell sessions!*
   #
+  # @param file_name [String] Name of remote file to append
+  # @param data [String] Contents to append
   def append_file(file_name, data)
     if session.type == "meterpreter"
       fd = session.fs.file.new(file_name, "ab")
@@ -273,17 +285,18 @@ module Msf::Post::File
     return true
   end
 
-  #
   # Read a local file +local+ and write it as +remote+ on the remote file
   # system
   #
+  # @param remote [String] Name of the uploaded file on the remote filesystem
+  # @param local  [String] Local filename to upload
   def upload_file(remote, local)
     write_file(remote, ::File.read(local))
   end
 
-  #
   # Delete remote files
   #
+  # @return [void]
   def rm_f(*remote_files)
     remote_files.each do |remote|
       if session.type == "meterpreter"
@@ -298,9 +311,11 @@ module Msf::Post::File
     end
   end
 
-  #
   # Rename a remote file.
   #
+  # @param old_file [String]
+  # @param new_file [String]
+  # @return [void]
   def rename_file(old_file, new_file)
     if session.respond_to? :commands and session.commands.include?("stdapi_fs_file_move")
       session.fs.file.mv(old_file, new_file)
@@ -327,7 +342,7 @@ protected
     begin
       fd = session.fs.file.new(file_name, "rb")
     rescue ::Rex::Post::Meterpreter::RequestError => e
-      print_error("Failed to open file: #{file_name}")
+      print_error("Failed to open file: #{file_name} : #{e}")
       return nil
     end
 
