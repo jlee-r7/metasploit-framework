@@ -49,10 +49,10 @@ def xmit_dump_ruby( data, length=16 ):
     dump += "%s\n" % ( hex )
   print dump
 #=============================================================================#
-def xmit_offset( data, name, value ):
+def xmit_offset( data, name, value, match_offset=0 ):
   offset = data.find( value );
   if offset != -1:
-    print "# %s Offset: %d" % ( name, offset )
+    print "# %s Offset: %d" % ( name, offset + match_offset )
 #=============================================================================#
 def xmit( name, dump_ruby=True ):
   bin = os.path.normpath( os.path.join( "./bin/", "%s.bin" % name ) )
@@ -65,7 +65,7 @@ def xmit( name, dump_ruby=True ):
   xmit_offset( data, "IPv6Host", pack( "<Q", 0xBBBBBBBBBBBBBBB1 ) ) # An IPv6 Address
   xmit_offset( data, "IPv6ScopeId", pack( "<L", 0xAAAAAAA1 ) ) # An IPv6 Scope ID
   xmit_offset( data, "HostName", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\x00" )     # hostname filler
-  xmit_offset( data, "RetryCounter", "\x6a\x05" )     # socket retry
+  xmit_offset( data, "RetryCounter", "\x6a\x05", 1 )     # socket retry
   xmit_offset( data, "CodeLen", pack( "<L", 0x12345678 ) )  # Filler
   xmit_offset( data, "Hostname", "https" )
   xmit_offset( data, "ExitFunk", pack( "<L", 0x0A2A1DE0 ) ) # kernel32.dll!ExitThread
