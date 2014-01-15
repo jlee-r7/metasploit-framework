@@ -1,5 +1,5 @@
 STAGERS=stager_sock_bind stager_sock_bind6 stager_sock_bind_udp stager_sock_bind_icmp \
-				stager_egghunt stager_sock_find stager_sock_reverse \
+				stager_egghunt stager_sock_find stager_sock_reverse stager_sock_reverse_sendid \
 				stager_sock_reverse_icmp stager_sock_reverse_udp \
 				stager_sock_reverse_udp_dns
 STAGES=stage_tcp_shell stage_udp_shell
