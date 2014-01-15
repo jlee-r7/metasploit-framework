@@ -42,7 +42,7 @@ all: $(SINGLE) $(STAGES) $(STAGERS)
 		t=s.dup; \
 		s.clear; \
 		s<<("\""+t.scan(/../).map{|b|"\\x#{b}"}.join+"\"").ljust(23); \
-		STDIN.eof? ? s<< " #  " : s<< "+#  "; \
+		STDIN.eof? ? s<< " #  " : s<< "+ #  "; \
 		}; \
 		$$_ = $$F.join(" ") + "\n"; \
 		' < $*.tmp > $@
