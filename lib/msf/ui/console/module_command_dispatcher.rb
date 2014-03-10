@@ -124,7 +124,7 @@ module ModuleCommandDispatcher
   def cmd_check(*args)
     defanged?
 
-    ip_range_arg = args.shift || framework.datastore['RHOSTS'] || mod.datastore['RHOSTS'] || ''
+    ip_range_arg = args.shift || ''
     hosts = Rex::Socket::RangeWalker.new(ip_range_arg)
 
     begin
@@ -160,7 +160,7 @@ module ModuleCommandDispatcher
 
   def check_simple(instance=nil)
     unless instance
-      instance = mod 
+      instance = mod
     end
 
     rhost = instance.rhost
