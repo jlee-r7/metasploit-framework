@@ -34,6 +34,7 @@ class Metasploit3 < Msf::Auxiliary
     )
 
     deregister_options('RPORT')
+    deregister_options('SMBDIRECT')
     @smb_port = 445
   end
 
@@ -42,7 +43,7 @@ class Metasploit3 < Msf::Auxiliary
   end
 
   def smb_direct
-    @smbdirect || datastore['SMBDirect']
+    (@smb_port == 445)
   end
 
   # Fingerprint a single host
@@ -55,10 +56,10 @@ class Metasploit3 < Msf::Auxiliary
 
     begin
       res = smb_fingerprint()
-      
+
       #
       # Create the note hash for smb.fingerprint
-      #      
+      #
       conf = {
          :native_os => res['native_os'],
          :native_lm => res['native_lm']
@@ -81,7 +82,7 @@ class Metasploit3 < Msf::Auxiliary
           conf[:os_edition] = res['edition']
         end
 
-        if res['sp'].to_s.length > 0 
+        if res['sp'].to_s.length > 0
           desc << " #{res['sp'].downcase.gsub('service pack ', 'SP')}"
           conf[:os_sp] = res['sp']
         end
@@ -92,7 +93,7 @@ class Metasploit3 < Msf::Auxiliary
         end
 
         if res['lang'].to_s.length > 0 and res['lang'] != 'Unknown'
-          desc << " (language:#{res['lang']}"
+          desc << " (language:#{res['lang']})"
           conf[:os_lang] = res['lang']
           match_conf['os.language'] = conf[:os_lang]
         end
@@ -127,7 +128,7 @@ class Metasploit3 < Msf::Auxiliary
           :port  => rport,
           :proto => 'tcp',
           :ntype => 'fingerprint.match',
-          :data  => match_conf         
+          :data  => match_conf
         )
       else
         desc = "#{res['native_os']} (#{res['native_lm']})"
