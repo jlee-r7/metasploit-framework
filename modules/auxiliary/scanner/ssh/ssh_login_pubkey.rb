@@ -6,6 +6,7 @@
 require 'msf/core'
 require 'net/ssh'
 require 'metasploit/framework/login_scanner/ssh'
+require 'metasploit/framework/credential_collection'
 
 class Metasploit3 < Msf::Auxiliary
 
@@ -180,34 +181,6 @@ class Metasploit3 < Msf::Auxiliary
     s
   end
 
-  def do_report(ip, port, result)
-    service_data = {
-      address: ip,
-      port: port,
-      service_name: 'ssh',
-      protocol: 'tcp',
-      workspace_id: myworkspace_id
-    }
-
-    credentail_data = {
-      module_fullname: self.fullname,
-      origin_type: :service,
-      private_data: result.credential.private,
-      private_type: :ssh_key,
-      username: result.credential.public,
-    }.merge(service_data)
-
-    credential_core = create_credential(credentail_data)
-
-    login_data = {
-      core: credential_core,
-      last_attempted_at: DateTime.now,
-      status: result.status,
-    }.merge(service_data)
-
-    create_credential_login(login_data)
-  end
-
   def run_host(ip)
     print_status("#{ip}:#{rport} SSH - Testing Cleartext Keys")
 
@@ -224,7 +197,9 @@ class Metasploit3 < Msf::Auxiliary
       username: datastore['USERNAME'],
     )
 
-    print_brute :level => :vstatus, :ip => ip, :msg => "Testing #{keys.key_data.count} keys"
+    keys = prepend_db_keys(keys)
+
+    print_brute :level => :vstatus, :ip => ip, :msg => "Testing #{keys.key_data.count} keys from #{datastore['KEY_PATH']}"
     scanner = Metasploit::Framework::LoginScanner::SSH.new(
       host: ip,
       port: rport,
@@ -234,66 +209,42 @@ class Metasploit3 < Msf::Auxiliary
     )
 
     scanner.scan! do |result|
-
+      credential_data = result.to_h
+      credential_data.merge!(
+          module_fullname: self.fullname,
+          workspace_id: myworkspace_id
+      )
       case result.status
-      when Metasploit::Model::Login::Status::SUCCESSFUL
-        print_brute :level => :good, :ip => ip, :msg => "Success: '#{result.credential.public}' '#{result.proof.to_s.gsub(/[\r\n\e\b\a]/, ' ')}'"
-        do_report(ip,rport,result)
-        session_setup(result, scanner.ssh_socket)
-        :next_user
-      when Metasploit::Model::Login::Status::UNABLE_TO_CONNECT
-        print_brute :level => :verror, :ip => ip, :msg => "Could not connect"
-        invalidate_login(
-            address: ip,
-            port: rport,
-            protocol: 'tcp',
-            public: result.credential.public,
-            private: result.credential.private,
-            realm_key: result.credential.realm_key,
-            realm_value: result.credential.realm,
-            status: result.status
-        )
-        scanner.ssh_socket.close if scanner.ssh_socket && !scanner.ssh_socket.closed?
-        :abort
-      when Metasploit::Model::Login::Status::INCORRECT
-        print_brute :level => :verror, :ip => ip, :msg => "Failed: '#{result.credential}'"
-        invalidate_login(
-            address: ip,
-            port: rport,
-            protocol: 'tcp',
-            public: result.credential.public,
-            private: result.credential.private,
-            realm_key: result.credential.realm_key,
-            realm_value: result.credential.realm,
-            status: result.status
-        )
-        scanner.ssh_socket.close if scanner.ssh_socket && !scanner.ssh_socket.closed?
+        when Metasploit::Model::Login::Status::SUCCESSFUL
+          print_brute :level => :good, :ip => ip, :msg => "Success: '#{result.credential}' '#{result.proof.to_s.gsub(/[\r\n\e\b\a]/, ' ')}'"
+          credential_core = create_credential(credential_data)
+          credential_data[:core] = credential_core
+          create_credential_login(credential_data)
+          session_setup(result, scanner.ssh_socket)
+          :next_user
+        when Metasploit::Model::Login::Status::UNABLE_TO_CONNECT
+          print_brute :level => :verror, :ip => ip, :msg => "Could not connect"
+          scanner.ssh_socket.close if scanner.ssh_socket && !scanner.ssh_socket.closed?
+          invalidate_login(credential_data)
+          :abort
+        when Metasploit::Model::Login::Status::INCORRECT
+          print_brute :level => :verror, :ip => ip, :msg => "Failed: '#{result.credential}'"
+          invalidate_login(credential_data)
+          scanner.ssh_socket.close if scanner.ssh_socket && !scanner.ssh_socket.closed?
         else
-          invalidate_login(
-              address: ip,
-              port: rport,
-              protocol: 'tcp',
-              public: result.credential.public,
-              private: result.credential.private,
-              realm_key: result.credential.realm_key,
-              realm_value: result.credential.realm,
-              status: result.status
-          )
+          invalidate_login(credential_data)
           scanner.ssh_socket.close if scanner.ssh_socket && !scanner.ssh_socket.closed?
       end
-
     end
 
   end
 
-  class KeyCollection
+  class KeyCollection < Metasploit::Framework::CredentialCollection
     attr_accessor :key_data
+    attr_accessor :key_path
 
     def initialize(opts={})
-      @username = opts[:username]
-      @user_file = opts[:user_file]
-      @key_path = opts.fetch(:key_path)
-
+      super
       valid!
     end
 
@@ -322,6 +273,8 @@ class Metasploit3 < Msf::Auxiliary
     end
 
     def each
+      prepended_creds.each { |c| yield c }
+
       if @user_file.present?
         File.open(@user_file, 'rb') do |user_fd|
           user_fd.each_line do |user_from_file|
