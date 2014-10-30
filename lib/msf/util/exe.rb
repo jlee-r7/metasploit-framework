@@ -1263,7 +1263,7 @@ require 'msf/core/exe/segment_injector'
 
   def self.encode_stub(framework, arch, code, platform = nil, badchars = '')
     return code unless framework.encoders
-    framework.encoders.each_module_ranked('Arch' => arch) do |name, mod|
+    framework.encoders.each_module_ranked('Arch' => arch, 'Platform' => platform) do |name, mod|
       begin
         enc = framework.encoders.create(name)
         raw = enc.encode(code, badchars, nil, platform)

@@ -12,6 +12,76 @@ describe Msf::Util::EXE do
     described_class
   end
 
+  describe '.encode_stub' do
+    context "with a UNIX command payload" do
+      let(:framework) do
+        Msf::Simple::Framework.create(
+          :module_types => [ Msf::MODULE_ENCODER ],
+          'DisableDatabase' => true
+        )
+      end
+      # Just a collection of typically bad characters so we force encoding
+      # to happen
+      let(:stuff) { %q%$(){} \\|% }
+
+      def try(badchars)
+        echo_stuff = %Q|echo '#{stuff}'|
+        encoded = subject.encode_stub(framework, [ ARCH_CMD ], echo_stuff, Msf::Module::PlatformList.transform('unix'), badchars)
+        $stdout.puts encoded
+        encoded.should be_a(String)
+        output = `#{encoded}`.chomp
+
+        output
+      end
+
+      # Must always have one of $ or space
+
+      it "should produce a functional command when badchars is empty" do
+        try(%q^^).should eq(stuff)
+      end
+
+      it "should produce a functional command with no spaces" do
+        try(%q^ ^).should eq(stuff)
+      end
+
+      it "should produce a functional command with no pipes" do
+        pending "wtf, single quotes" do
+          try(%q^|^).should eq(stuff)
+        end
+      end
+      it "should produce a functional command with no pipes, or backticks" do
+        pending "wtf, single quotes" do
+          try(%q^|`^).should eq(stuff)
+        end
+      end
+      it "should produce a functional command with no pipes, backticks, or dollars" do
+        try(%q^|`$^).should eq(stuff)
+      end
+
+      it "should produce a functional command with no pipes, backticks, or spaces" do
+        pending "wtf, single quotes" do
+          try(%q^|` ^).should eq(stuff)
+        end
+      end
+
+      it "should produce a functional command with no whacks" do
+        # Rule out echo -ne altogether
+        try(%q^\\^).should eq(stuff)
+      end
+
+      it "should produce a functional command with no whacks, or ticks" do
+        # Backslash rules out echo, so now we're exercising perl
+        try(%q^\\'^).should eq(stuff)
+      end
+      it "should produce a functional command with no whacks, or spaces" do
+        try(%q^\\ ^).should eq(stuff)
+      end
+      it "should produce a functional command with no whacks, ticks, or spaces" do
+        try(%q^\\' ^).should eq(stuff)
+      end
+    end
+  end
+
   $framework = Msf::Simple::Framework.create(
     :module_types => [ Msf::MODULE_NOP ],
     'DisableDatabase' => true
