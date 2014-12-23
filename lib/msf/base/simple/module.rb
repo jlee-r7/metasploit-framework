@@ -11,6 +11,9 @@ module Simple
 #
 ###
 module Module
+  # @!attribute [rw] user_data
+  #   @return An arbitrary blob of data that can be used for whatever
+  attr_accessor :user_data
 
   #
   # Imports extra options from the supplied hash either as a string or as a
@@ -50,6 +53,7 @@ module Module
   def save_config
     self.datastore.to_file(Msf::Config.config_file, self.refname)
   end
+
 
 end
 

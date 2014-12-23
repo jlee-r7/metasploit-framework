@@ -31,15 +31,15 @@ module Msf::DBManager::Session
   #     The in-memory session to persist to the database.
   #   @option opts [Mdm::Workspace] :workspace The workspace for in which the
   #     :session host is contained.  Also used as the workspace for the
-  #     Mdm::ExploitAttempt and Mdm::Vuln.  Defaults to Mdm::Worksapce with
+  #     Mdm::ExploitAttempt and Mdm::Vuln.  Defaults to Mdm::Workspace with
   #     Mdm::Workspace#name equal to +session.workspace+.
   #   @return [nil] if {Msf::DBManager#active} is +false+.
   #   @return [Mdm::Session] if session is saved
   #   @raise [ArgumentError] if :session is not an {Msf::Session}.
   #   @raise [ActiveRecord::RecordInvalid] if session is invalid and cannot be
   #     saved, in which case, the Mdm::ExploitAttempt and Mdm::Vuln will not be
-  #     created, but the Mdm::Host will have been.   (There is no transaction
-  #       to rollback the Mdm::Host creation.)
+  #     created, but the Mdm::Host will have been. (There is no transaction to
+  #     rollback the Mdm::Host creation.)
   #   @see #find_or_create_host
   #   @see #normalize_host
   #   @see #report_exploit_success
@@ -121,7 +121,6 @@ module Msf::DBManager::Session
     else
       raise ArgumentError.new("Missing option :session or :host")
     end
-    ret = {}
 
     # Truncate the session data if necessary
     if sess_data[:desc]
@@ -195,6 +194,8 @@ module Msf::DBManager::Session
         :vuln        => vuln
       }
 
+      $stderr.puts("OMG USER DATA")
+      p session.exploit.user_data
       framework.db.report_exploit_success(attempt_info)
 
     end
