@@ -43,16 +43,13 @@ class Metasploit3 < Msf::Auxiliary
   def run_batch(hosts)
     open_pcap
 
-    pcap = self.capture
-
     ports = Rex::Socket.portspec_crack(datastore['PORTS'])
 
     if ports.empty?
       raise Msf::OptionValidateError.new(['PORTS'])
     end
 
-    to = (datastore['TIMEOUT'] || 500).to_f / 1000.0
-
+    seen = {}
     # Spread the load across the hosts
     ports.each do |dport|
       hosts.each do |dhost|
@@ -65,16 +62,24 @@ class Metasploit3 < Msf::Auxiliary
 
           capture_sendto(probe, dhost)
 
-          reply = probereply(self.capture, to)
+          reply = wait_for_next_packet(:tcp)
 
           next if not reply
+
+          if !seen[dhost] && should_arp?(dhost)
+            # This box is in our local subnet, record its hardware address
+            report_host(host: dhost, mac: reply.eth_saddr)
+            seen[dhost] = true
+          end
 
           if (reply.is_tcp? and reply.tcp_flags.syn == 1 and reply.tcp_flags.ack == 1)
             print_status(" TCP OPEN #{dhost}:#{dport}")
             report_service(:host => dhost, :port => dport)
           end
         rescue ::Exception
+          # Gotta catch 'em all!
           print_error("Error: #{$!.class} #{$!}")
+          print_debug($!.backtrace.join("\n"))
         end
       end
     end
@@ -105,22 +110,6 @@ class Metasploit3 < Msf::Auxiliary
     p.tcp_win = 3072
     p.recalc
     p
-  end
-
-  def probereply(pcap, to)
-    reply = nil
-    begin
-      Timeout.timeout(to) do
-        pcap.each do |r|
-          pkt = PacketFu::Packet.parse(r)
-          next unless pkt.is_tcp?
-          reply = pkt
-          break
-        end
-      end
-    rescue Timeout::Error
-    end
-    return reply
   end
 
 end
