@@ -422,7 +422,7 @@ module Rex
       ::ActiveRecord::Base.connection_pool.with_connection {
 
       # Report the vulnerability
-      vuln = db.report_vuln(vuln_info)
+      vuln = db_report(:vuln, vuln_info)
 
       if vuln
         # Report the vulnerability details
