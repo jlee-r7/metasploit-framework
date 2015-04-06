@@ -145,6 +145,9 @@ module Parser
       case table
       when :note, :web_site, :web_page, :web_form, :web_vuln
         just_the_facts = nonempty_data
+      when :vuln
+        just_the_facts = nonempty_data.select {|k,v| valid_attrs.include? k.to_s.to_sym}
+        just_the_facts[:origin] = @args[:origin]
       else
         just_the_facts = nonempty_data.select {|k,v| valid_attrs.include? k.to_s.to_sym}
       end
@@ -160,18 +163,18 @@ module Parser
     def db_valid_attributes(table)
       case table.to_s.to_sym
       when :host
-        ::Mdm::Host.new.attribute_names.map {|x| x.to_sym} |
+        ::Mdm::Host.column_names.map(&:to_sym) |
           [:host, :workspace]
       when :service
-        ::Mdm::Service.new.attribute_names.map {|x| x.to_sym} |
+        ::Mdm::Service.column_names.map(&:to_sym) |
           [:host, :host_name, :mac, :workspace]
       when :vuln
-        ::Mdm::Vuln.new.attribute_names.map {|x| x.to_sym} |
-          [:host, :refs, :workspace, :port, :proto, :details, :exploited_at]
+        ::Mdm::Vuln.column_names.map(&:to_sym) |
+          [:host, :refs, :workspace, :port, :proto, :details, :exploited_at, :origin]
       when :vuln_details
-        ::Mdm::VulnDetails.new.attribute_names.map {|x| x.to_sym} | [ :key ]
+        ::Mdm::VulnDetails.column_names.map(&:to_sym) | [ :key ]
       when :host_details
-        ::Mdm::HostDetails.new.attribute_names.map {|x| x.to_sym} | [ :key ]
+        ::Mdm::HostDetails.column_names.map(&:to_sym) | [ :key ]
       when :note, :web_site, :web_page, :web_form, :web_vuln
         # These guys don't complain
         [:anything]

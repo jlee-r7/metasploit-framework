@@ -86,6 +86,10 @@ module Msf::DBManager::Import
     data = args[:data] || args['data']
     ftype = import_filetype_detect(data)
     yield(:filetype, @import_filedata[:type]) if block
+    # Now we know that we have a reasonable amount of confidence that the file
+    # is useful, let's make an origin!  Whee!
+    args[:origin] = { origin_proof_of_concept: args[:filename] }
+
     self.send "import_#{ftype}".to_sym, args, &block
   end
 
