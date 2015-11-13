@@ -387,11 +387,7 @@ class Console::CommandDispatcher::Stdapi::Fs
             src_path = file['path'] + client.fs.file.separator + file['name']
             dest_path = src_path.tr(src_separator, ::File::SEPARATOR)
 
-            client.fs.file.download(dest_path, src_path) do |step, src, dst|
-              puts step
-              print_status("#{step.ljust(11)}: #{src} -> #{dst}")
-              client.framework.events.on_session_download(client, src, dest) if msf_loaded?
-            end
+            download_single_file(dest_path, src_path)
           end
 
         else
@@ -407,10 +403,7 @@ class Console::CommandDispatcher::Stdapi::Fs
             client.framework.events.on_session_download(client, src, dest) if msf_loaded?
           end
         elsif (stat.file?)
-          client.fs.file.download(dest, src) do |step, src, dst|
-            print_status("#{step.ljust(11)}: #{src} -> #{dst}")
-            client.framework.events.on_session_download(client, src, dest) if msf_loaded?
-          end
+          download_single_file(dest, src)
         end
       end
     }
@@ -715,6 +708,18 @@ class Console::CommandDispatcher::Stdapi::Fs
     return [] if words.length > 1
 
     tab_complete_filenames(str, words)
+  end
+
+  # @param dest [String] local path to store the downloaded file
+  # @param source [String] remote path of a file to download
+  # @return [void]
+  def download_single_file(dest, source)
+    start = Time.now
+    client.fs.file.download(dest, source) do |step, src, dst|
+      print_status("#{step.ljust(11)}: #{src} -> #{dst}")
+      client.framework.events.on_session_download(client, src, dest) if msf_loaded?
+    end
+    print_status("Finished in #{Time.now.to_i - start.to_i} seconds")
   end
 
 end
