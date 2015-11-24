@@ -15,6 +15,27 @@ module Meterpreter
 ###
 class PacketResponseWaiter
 
+  # @return [Object]
+  attr_accessor :completion_param
+
+  # @return [Proc]
+  attr_accessor :completion_routine
+
+  # @return [ConditionVariable]
+  attr_accessor :cond
+
+  # @return [ConditionVariable]
+  attr_accessor :created_at
+
+  # @return [Mutex]
+  attr_accessor :mutex
+
+  # @return [Packet]
+  attr_accessor :response
+
+  # @return [Fixnum] request ID to wait for
+  attr_accessor :rid
+
   #
   # Initializes a response waiter instance for the supplied request
   # identifier.
@@ -43,6 +64,8 @@ class PacketResponseWaiter
   #
   # Notifies the waiter that the supplied response packet has arrived.
   #
+  # @param response [Packet]
+  # @return [void]
   def notify(response)
     if (self.completion_routine)
       self.response = response
@@ -56,9 +79,12 @@ class PacketResponseWaiter
   end
 
   #
-  # Waits for a given time interval for the response packet to arrive.
-  # If the interval is -1 we can wait forever.
+  # Wait for a given time interval for the response packet to arrive.
   #
+  # @param interval [Fixnum,nil] number of seconds to wait, or nil to wait
+  #   forever
+  # @return [Packet,nil] the response, or nil if the interval elapsed before
+  #   receiving one
   def wait(interval)
     interval = nil if interval and interval == -1
     self.mutex.synchronize do
@@ -69,8 +95,6 @@ class PacketResponseWaiter
     return self.response
   end
 
-  attr_accessor :rid, :mutex, :cond, :response # :nodoc:
-  attr_accessor :completion_routine, :completion_param # :nodoc:
 end
 
 end; end; end
